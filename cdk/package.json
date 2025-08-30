@@ -1,0 +1,29 @@
+{
+  "name": "mailbox-image-analyzer",
+  "version": "0.1.0",
+  "description": "Mailbox image analyzer with CDK infrastructure",
+  "main": "bin/mailbox-image-analyzer.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest",
+    "cdk": "cdk",
+    "deploy:dev": "cdk deploy --context environment=dev",
+    "deploy:prod": "cdk deploy --context environment=prod",
+    "destroy:dev": "cdk destroy --context environment=dev",
+    "destroy:prod": "cdk destroy --context environment=prod"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "20.0.0",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "aws-cdk": "2.1027.0",
+    "ts-node": "^10.9.0",
+    "typescript": "~5.0.0"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.213.0",
+    "constructs": "^10.0.0"
+  }
+}
