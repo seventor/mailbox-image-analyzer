@@ -90,15 +90,15 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       destinationKeyPrefix: '', // Upload to root of bucket
     });
 
-    // Get the hosted zone for feilbr.uk
+    // Get the hosted zone for g103.net
     const hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
-      domainName: 'feilbr.uk',
+      domainName: 'g103.net',
     });
 
     // Create domain name based on environment
     const domainName = props.environment === 'dev' 
-      ? 'mailbox-dev.feilbr.uk' 
-      : 'mailbox.feilbr.uk';
+      ? 'mailbox-dev.g103.net' 
+      : 'mailbox.g103.net';
 
     // Create SSL certificate for the domain
     const certificate = new acm.Certificate(this, 'Certificate', {
