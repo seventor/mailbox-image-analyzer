@@ -57,10 +57,9 @@ Before deploying this infrastructure, ensure you have:
 
 ### GitHub Actions (Recommended)
 
-The project includes automated deployment workflows:
+The project includes an automated deployment workflow:
 
 - **Production Deployment**: Automatically deploys to production when code is pushed to the `master` branch
-- **Development Deployment**: Can be triggered manually or on pull requests
 
 #### Setup Required
 
@@ -139,8 +138,7 @@ cd cdk && cdk destroy --context environment=prod
 ```
 ├── .github/                      # GitHub Actions workflows
 │   └── workflows/
-│       ├── deploy-prod.yml       # Production deployment workflow
-│       └── deploy-dev.yml        # Development deployment workflow
+│       └── deploy-prod.yml       # Production deployment workflow
 ├── cdk/                          # CDK infrastructure
 │   ├── bin/                      # CDK app entry point
 │   │   └── mailbox-image-analyzer.ts
