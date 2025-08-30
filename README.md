@@ -55,7 +55,24 @@ Before deploying this infrastructure, ensure you have:
 
 ## Deployment
 
-### Using the Deployment Script (Recommended)
+### GitHub Actions (Recommended)
+
+The project includes automated deployment workflows:
+
+- **Production Deployment**: Automatically deploys to production when code is pushed to the `master` branch
+- **Development Deployment**: Can be triggered manually or on pull requests
+
+#### Setup Required
+
+Before using GitHub Actions, you need to configure AWS credentials as GitHub secrets:
+
+1. Go to your GitHub repository settings
+2. Navigate to "Secrets and variables" → "Actions"
+3. Add the following secrets:
+   - `AWS_ACCESS_KEY_ID`: Your AWS access key
+   - `AWS_SECRET_ACCESS_KEY`: Your AWS secret key
+
+#### Manual Deployment
 
 Deploy to development environment:
 ```bash
@@ -120,6 +137,10 @@ cd cdk && cdk destroy --context environment=prod
 ### Project Structure
 
 ```
+├── .github/                      # GitHub Actions workflows
+│   └── workflows/
+│       ├── deploy-prod.yml       # Production deployment workflow
+│       └── deploy-dev.yml        # Development deployment workflow
 ├── cdk/                          # CDK infrastructure
 │   ├── bin/                      # CDK app entry point
 │   │   └── mailbox-image-analyzer.ts
@@ -130,6 +151,8 @@ cd cdk && cdk destroy --context environment=prod
 │   ├── cdk.json                  # CDK configuration
 │   ├── package.json              # CDK dependencies
 │   └── tsconfig.json             # TypeScript configuration
+├── webapp/                       # Web application files
+│   └── index.html                # Main webapp page
 ├── package.json                  # Root project configuration
 ├── README.md                     # This file
 └── instructions.md               # Project requirements
