@@ -90,7 +90,7 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       destinationKeyPrefix: '', // Upload to root of bucket
     });
 
-    // Get the hosted zone for feilbr.uk
+    // Get the hosted zone for g103.net
     const hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
       domainName: 'g103.net',
     });
