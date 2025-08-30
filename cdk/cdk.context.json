@@ -1,9 +1,6 @@
 {
-  "acknowledged-issue-numbers": [
-    34892
-  ],
   "hosted-zone:account=867344428767:domainName=g103.net:region=us-east-1": {
-    "Id": "/hostedzone/Z0936967A4EU34S7086V",
+    "Id": "/hostedzone/Z09168563J0O48K7T9DJD",
     "Name": "g103.net."
   }
 }
