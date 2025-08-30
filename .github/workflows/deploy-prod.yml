@@ -37,6 +37,10 @@ jobs:
         run: |
           cd cdk && npm ci
 
+      - name: Install AWS CDK CLI
+        run: |
+          npm install -g aws-cdk
+
       - name: Build CDK
         run: |
           cd cdk && npm run build
