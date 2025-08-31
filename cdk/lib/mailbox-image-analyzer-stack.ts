@@ -84,22 +84,16 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       validation: acm.CertificateValidation.fromDns(hostedZone),
     });
 
-    // Create Origin Access Identity for CloudFront to access S3
-    const originAccessIdentity = new cloudfront.OriginAccessIdentity(this, 'OriginAccessIdentity', {
-      comment: `OAC for ${props.environment} environment`,
+    // Configure S3 origin using Origin Access Control (OAC)
+    const s3Origin = origins.S3BucketOrigin.withOriginAccessControl(this.imageBucket, {
+      // Explicit for clarity; READ is the default
+      originAccessLevels: [cloudfront.AccessLevel.READ],
     });
-
-    // Grant read access to the Origin Access Identity
-    this.imageBucket.grantRead(originAccessIdentity);
 
     // Create CloudFront distribution with S3 Origin Access Control (OAC)
     this.cloudfrontDistribution = new cloudfront.Distribution(this, 'Distribution', {
       defaultBehavior: {
-        // TODO: Update to S3BucketOrigin when CDK provides concrete implementation
-        // Currently using deprecated S3Origin due to S3BucketOrigin being abstract
-        origin: new origins.S3Origin(this.imageBucket, {
-          originAccessIdentity: originAccessIdentity,
-        }),
+        origin: s3Origin,
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
         functionAssociations: [
