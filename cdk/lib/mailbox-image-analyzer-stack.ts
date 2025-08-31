@@ -80,9 +80,15 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       ? 'mailbox-dev.g103.net' 
       : 'mailbox.g103.net';
 
-    // Create SSL certificate for the domain
+    // Create API subdomain
+    const apiDomainName = props.environment === 'dev' 
+      ? 'api.mailbox-dev.g103.net' 
+      : 'api.mailbox.g103.net';
+
+    // Create SSL certificate for the domain (including API subdomain)
     const certificate = new acm.Certificate(this, 'Certificate', {
       domainName: domainName,
+      subjectAlternativeNames: [apiDomainName],
       validation: acm.CertificateValidation.fromDns(hostedZone),
     });
 
@@ -144,6 +150,8 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       ),
     });
 
+
+
     // Create Lambda function for handling uploads
     const uploadFunction = new lambda.Function(this, 'UploadFunction', {
       runtime: lambda.Runtime.PYTHON_3_11,
@@ -167,6 +175,29 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
         allowOrigins: apigateway.Cors.ALL_ORIGINS,
         allowMethods: apigateway.Cors.ALL_METHODS,
       },
+    });
+
+    // Create custom domain for API Gateway
+    const apiDomain = new apigateway.DomainName(this, 'ApiDomain', {
+      domainName: apiDomainName,
+      certificate: certificate,
+      securityPolicy: apigateway.SecurityPolicy.TLS_1_2,
+    });
+
+    // Create base path mapping for API Gateway
+    new apigateway.BasePathMapping(this, 'ApiBasePathMapping', {
+      domainName: apiDomain,
+      restApi: api,
+      basePath: '', // No base path, so API will be available at root
+    });
+
+    // Create DNS record for API subdomain pointing to API Gateway
+    new route53.ARecord(this, 'ApiAliasRecord', {
+      zone: hostedZone,
+      recordName: props.environment === 'dev' ? 'api.mailbox-dev' : 'api.mailbox',
+      target: route53.RecordTarget.fromAlias(
+        new targets.ApiGatewayDomain(apiDomain)
+      ),
     });
 
     // Create API Gateway integration
@@ -204,6 +235,13 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       value: api.url,
       description: 'API Gateway URL for uploads',
       exportName: `ApiGatewayUrl-${props.environment}`,
+    });
+
+    // Output the custom API domain URL
+    new cdk.CfnOutput(this, 'ApiCustomDomainUrl', {
+      value: `https://${apiDomainName}`,
+      description: 'Custom API domain URL for uploads',
+      exportName: `ApiCustomDomainUrl-${props.environment}`,
     });
   }
 }
