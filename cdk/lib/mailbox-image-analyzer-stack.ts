@@ -8,6 +8,8 @@ import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
+import * as apigateway from 'aws-cdk-lib/aws-apigateway';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
 
 export interface MailboxImageAnalyzerStackProps extends cdk.StackProps {
   environment: 'dev' | 'prod';
@@ -142,6 +144,38 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       ),
     });
 
+    // Create Lambda function for handling uploads
+    const uploadFunction = new lambda.Function(this, 'UploadFunction', {
+      runtime: lambda.Runtime.PYTHON_3_11,
+      handler: 'upload_handler.handler',
+      code: lambda.Code.fromAsset('../lambda'),
+      timeout: cdk.Duration.minutes(1),
+      memorySize: 256,
+      environment: {
+        BUCKET_NAME: this.imageBucket.bucketName,
+      },
+    });
+
+    // Grant S3 write permissions to upload function
+    this.imageBucket.grantWrite(uploadFunction);
+
+    // Create API Gateway for upload endpoint
+    const api = new apigateway.RestApi(this, 'UploadApi', {
+      restApiName: `MailboxImageAnalyzer-${props.environment}`,
+      description: 'API for uploading mailbox images',
+      defaultCorsPreflightOptions: {
+        allowOrigins: apigateway.Cors.ALL_ORIGINS,
+        allowMethods: apigateway.Cors.ALL_METHODS,
+      },
+    });
+
+    // Create API Gateway integration
+    const uploadIntegration = new apigateway.LambdaIntegration(uploadFunction);
+
+    // Add upload endpoint
+    const uploadResource = api.root.addResource('upload');
+    uploadResource.addMethod('POST', uploadIntegration);
+
     // Output the bucket ARN
     new cdk.CfnOutput(this, 'ImageBucketArn', {
       value: this.imageBucket.bucketArn,
@@ -163,6 +197,13 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       value: this.cloudfrontDistribution.distributionDomainName,
       description: 'CloudFront distribution URL',
       exportName: `CloudFrontUrl-${props.environment}`,
+    });
+
+    // Output the API Gateway URL
+    new cdk.CfnOutput(this, 'ApiGatewayUrl', {
+      value: api.url,
+      description: 'API Gateway URL for uploads',
+      exportName: `ApiGatewayUrl-${props.environment}`,
     });
   }
 }
