@@ -6,11 +6,13 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as route53 from 'aws-cdk-lib/aws-route53';
-import * as targets from 'aws-cdk-lib/aws-route53-targets';
+import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
+import * as events from 'aws-cdk-lib/aws-events';
+import * as eventTargets from 'aws-cdk-lib/aws-events-targets';
 
 export interface MailboxImageAnalyzerStackProps extends cdk.StackProps {
   environment: 'dev' | 'prod';
@@ -147,7 +149,7 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       zone: hostedZone,
       recordName: props.environment === 'dev' ? 'mailbox-dev' : 'mailbox',
       target: route53.RecordTarget.fromAlias(
-        new targets.CloudFrontTarget(this.cloudfrontDistribution)
+        new route53Targets.CloudFrontTarget(this.cloudfrontDistribution)
       ),
     });
 
@@ -198,6 +200,37 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       { prefix: 'uploads/latest.jpg' }
     );
 
+    // Create Lambda function for thumbnail synchronization
+    const thumbnailSyncFunction = new lambda.Function(this, 'ThumbnailSyncFunction', {
+      runtime: lambda.Runtime.PYTHON_3_11,
+      handler: 'thumbnail_sync.handler',
+      code: lambda.Code.fromAsset('../lambda'),
+      timeout: cdk.Duration.minutes(5),
+      memorySize: 512,
+      layers: [pillowLayer],
+      environment: {
+        BUCKET_NAME: this.imageBucket.bucketName,
+      },
+    });
+
+    // Grant S3 read/write permissions to thumbnail sync function
+    this.imageBucket.grantReadWrite(thumbnailSyncFunction);
+
+    // Create EventBridge rule to trigger thumbnail sync daily at 00:30 CET (23:30 UTC)
+    const thumbnailSyncRule = new events.Rule(this, 'ThumbnailSyncRule', {
+      schedule: events.Schedule.cron({
+        minute: '30',
+        hour: '23',
+        day: '*',
+        month: '*',
+        year: '*',
+      }),
+      description: 'Trigger thumbnail sync daily at 00:30 CET',
+    });
+
+    // Add Lambda as target for the EventBridge rule
+    thumbnailSyncRule.addTarget(new eventTargets.LambdaFunction(thumbnailSyncFunction));
+
     // Create API Gateway for upload endpoint
     const api = new apigateway.RestApi(this, 'UploadApi', {
       restApiName: `MailboxImageAnalyzer-${props.environment}`,
@@ -228,7 +261,7 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       zone: hostedZone,
       recordName: props.environment === 'dev' ? 'api.mailbox-dev' : 'api.mailbox',
       target: route53.RecordTarget.fromAlias(
-        new targets.ApiGatewayDomain(apiDomain)
+        new route53Targets.ApiGatewayDomain(apiDomain)
       ),
     });
 
