@@ -10,16 +10,19 @@ There should be an API that handles requests from the browser. The API should ha
 An upload end-point that can take a POST request, and a client can upload a "latest.jpg" file. That file should be placed in the "uploads" folder in the root S3 bucket.
 
 # Serverside functionality
+Put all code for lamdas in a directory called "lambda" in the project root.
 
 # Upload
 When the file "uploads/latest.jpg" is updated in the S3 bucket, a function should copy that image to the "usortert" folder in the root of the bucket. The file should have the filename YYYY-MM-DD-HH-MM.jpg based on when the file was copied to the new folder. If there is a file already with that name, then overwrite it. At the same time, make a thumbnail of the image, and store that thumbnail in the "thumbnails" folder in the root of the S3 bucket, using this naming convention: YYYY-MM-DD-HH-MM-thumbnail.jpg. The thumbnail should be 128px wide, but keep the aspect ratio from the original.
 
 # General
-- When I ask a question, do not just chnage code. Just answer the question, and then maybe ask if you should change files and code
+- When I ask a question, do not just change code. Just answer the question, and then maybe ask if you should change files and code.
+- Don't start to code before you are told to.
+- Only work on the exect problem we are trying to solve, and do not add extra functionality I haven't asked for.
 
 # CDK and AWS
 - All files realted to CDK ans AWS deployment should reside in the subdirectory named 'cdk'
-- Do not run AWS CLI commands or CDK Deployments before asking
+- Do not run AWS CLI commands or CDK Deployments before asking or being told by me to do so.
 
 # Webapp
 - All files that are part of the webapp should reside in the subdirectory 'webapp'.
@@ -27,3 +30,4 @@ When the file "uploads/latest.jpg" is updated in the S3 bucket, a function shoul
 
 # GIT
 - Never commit anything before asking
+- Never run any git command until you are told to.
