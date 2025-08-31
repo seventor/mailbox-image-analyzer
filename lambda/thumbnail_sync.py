@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 from PIL import Image
 import io
+from thumbnail_utils import create_thumbnail
 
 s3_client = boto3.client('s3')
 
@@ -69,47 +70,23 @@ def handler(event, context):
             if filename not in thumbnails:
                 try:
                     print(f"Creating thumbnail for missing: {filename}")
-                    # Download the source image
-                    response = s3_client.get_object(
-                        Bucket=bucket_name,
-                        Key=source_key
-                    )
-                    image_data = response['Body'].read()
-                    
-                    # Create thumbnail using PIL
-                    image = Image.open(io.BytesIO(image_data))
-                    
-                    # Calculate new height maintaining aspect ratio (128px wide)
-                    width, height = image.size
-                    new_width = 128
-                    new_height = int((height * new_width) / width)
-                    
-                    # Resize image
-                    thumbnail = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
-                    
-                    # Convert thumbnail to bytes
-                    thumbnail_buffer = io.BytesIO()
-                    thumbnail.save(thumbnail_buffer, format='JPEG', quality=85)
-                    thumbnail_bytes = thumbnail_buffer.getvalue()
                     
                     # Create thumbnail filename
                     thumbnail_filename = filename.replace('.jpg', '-thumbnail.jpg')
                     thumbnail_key = f'thumbnails/{thumbnail_filename}'
                     
-                    # Upload thumbnail
-                    s3_client.put_object(
-                        Bucket=bucket_name,
-                        Key=thumbnail_key,
-                        Body=thumbnail_bytes,
-                        ContentType='image/jpeg'
-                    )
+                    # Create thumbnail using shared utility
+                    thumbnail_result = create_thumbnail(bucket_name, source_key, thumbnail_key)
                     
-                    # Add the newly created thumbnail to the thumbnails dictionary
-                    # Use the original filename as the key, not the thumbnail filename
-                    thumbnails[filename] = thumbnail_key
-                    
-                    created_count += 1
-                    print(f"Created thumbnail: {thumbnail_key} for {filename}")
+                    if thumbnail_result['success']:
+                        # Add the newly created thumbnail to the thumbnails dictionary
+                        # Use the original filename as the key, not the thumbnail filename
+                        thumbnails[filename] = thumbnail_key
+                        
+                        created_count += 1
+                        print(f"Created thumbnail: {thumbnail_key} for {filename}")
+                    else:
+                        print(f"Error creating thumbnail for {source_key}: {thumbnail_result['error']}")
                     
                 except Exception as e:
                     print(f"Error creating thumbnail for {source_key}: {str(e)}")

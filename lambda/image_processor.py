@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 from PIL import Image
 import io
+from thumbnail_utils import create_thumbnail
 
 s3_client = boto3.client('s3')
 
@@ -46,29 +47,16 @@ def handler(event, context):
             ContentType='image/jpeg'
         )
         
-        # Create thumbnail using PIL
-        image = Image.open(io.BytesIO(image_data))
+        # Create thumbnail using shared utility
+        thumbnail_key = f'thumbnails/{timestamp}-thumbnail.jpg'
+        thumbnail_result = create_thumbnail(bucket_name, f'usortert/{timestamp}.jpg', thumbnail_key)
         
-        # Calculate new height maintaining aspect ratio (128px wide)
-        width, height = image.size
-        new_width = 128
-        new_height = int((height * new_width) / width)
-        
-        # Resize image
-        thumbnail = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
-        
-        # Convert thumbnail to bytes
-        thumbnail_buffer = io.BytesIO()
-        thumbnail.save(thumbnail_buffer, format='JPEG', quality=85)
-        thumbnail_bytes = thumbnail_buffer.getvalue()
-        
-        # Upload thumbnail to thumbnails folder
-        s3_client.put_object(
-            Bucket=bucket_name,
-            Key=f'thumbnails/{timestamp}-thumbnail.jpg',
-            Body=thumbnail_bytes,
-            ContentType='image/jpeg'
-        )
+        if not thumbnail_result['success']:
+            print(f"Error creating thumbnail: {thumbnail_result['error']}")
+            return {
+                'statusCode': 500,
+                'body': json.dumps({'error': f'Failed to create thumbnail: {thumbnail_result["error"]}'})
+            }
         
         return {
             'statusCode': 200,
@@ -78,7 +66,8 @@ def handler(event, context):
                 'current_minute': current_minute,
                 'original_file': 'uploads/latest.jpg',
                 'copied_file': f'usortert/{timestamp}.jpg',
-                'thumbnail_file': f'thumbnails/{timestamp}-thumbnail.jpg'
+                'thumbnail_file': thumbnail_key,
+                'thumbnail_dimensions': thumbnail_result['dimensions']
             })
         }
         
