@@ -10,6 +10,7 @@ import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
 
 export interface MailboxImageAnalyzerStackProps extends cdk.StackProps {
   environment: 'dev' | 'prod';
@@ -166,6 +167,36 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
 
     // Grant S3 write permissions to upload function
     this.imageBucket.grantWrite(uploadFunction);
+
+    // Create Lambda layer for Pillow
+    const pillowLayer = new lambda.LayerVersion(this, 'PillowLayer', {
+      code: lambda.Code.fromAsset('../lambda/pillow-layer'),
+      compatibleRuntimes: [lambda.Runtime.PYTHON_3_11],
+      description: 'Pillow library for image processing',
+    });
+
+    // Create Lambda function for image processing
+    const imageProcessorFunction = new lambda.Function(this, 'ImageProcessorFunction', {
+      runtime: lambda.Runtime.PYTHON_3_11,
+      handler: 'image_processor.handler',
+      code: lambda.Code.fromAsset('../lambda'),
+      timeout: cdk.Duration.minutes(2),
+      memorySize: 512,
+      layers: [pillowLayer],
+      environment: {
+        BUCKET_NAME: this.imageBucket.bucketName,
+      },
+    });
+
+    // Grant S3 read/write permissions to image processor function
+    this.imageBucket.grantReadWrite(imageProcessorFunction);
+
+    // Add S3 event notification to trigger image processor when uploads/latest.jpg is updated
+    this.imageBucket.addEventNotification(
+      s3.EventType.OBJECT_CREATED_PUT,
+      new s3n.LambdaDestination(imageProcessorFunction),
+      { prefix: 'uploads/latest.jpg' }
+    );
 
     // Create API Gateway for upload endpoint
     const api = new apigateway.RestApi(this, 'UploadApi', {
