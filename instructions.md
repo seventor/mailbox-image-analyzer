@@ -31,3 +31,6 @@ When the file "uploads/latest.jpg" is updated in the S3 bucket, a function shoul
 # GIT
 - Never commit anything before asking
 - Never run any git command until you are told to.
+
+# NPM
+- Never run any NPM command without asking first, or you are explicitly told.

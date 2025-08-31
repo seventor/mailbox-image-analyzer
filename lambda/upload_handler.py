@@ -11,9 +11,19 @@ def handler(event, context):
         # Get bucket name from environment variable
         bucket_name = os.environ['BUCKET_NAME']
         
-        # API Gateway automatically base64 encodes binary data
-        # We need to decode it back to binary
-        image_bytes = base64.b64decode(event['body'])
+        # Get the body and check if it's base64 encoded
+        body = event['body']
+        is_base64_encoded = event.get('isBase64Encoded', False)
+        
+        if is_base64_encoded:
+            # API Gateway base64 encoded the binary data
+            image_bytes = base64.b64decode(body)
+        else:
+            # Raw binary data - convert to bytes if it's a string
+            if isinstance(body, str):
+                image_bytes = body.encode('latin-1')
+            else:
+                image_bytes = body
         
         # Upload to S3 in the uploads folder
         s3_client.put_object(

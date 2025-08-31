@@ -175,6 +175,7 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
         allowOrigins: apigateway.Cors.ALL_ORIGINS,
         allowMethods: apigateway.Cors.ALL_METHODS,
       },
+      binaryMediaTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
     });
 
     // Create custom domain for API Gateway
