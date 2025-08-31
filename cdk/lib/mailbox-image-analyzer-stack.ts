@@ -100,6 +100,26 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
         }),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+        functionAssociations: [
+          {
+            function: new cloudfront.Function(this, 'RootPathFunction', {
+              code: cloudfront.FunctionCode.fromInline(`
+                function handler(event) {
+                  var request = event.request;
+                  var uri = request.uri;
+                  
+                  // If accessing root path, serve index.html
+                  if (uri === '/') {
+                    request.uri = '/index.html';
+                  }
+                  
+                  return request;
+                }
+              `),
+            }),
+            eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
+          },
+        ],
       },
       domainNames: [domainName],
       certificate: certificate,
