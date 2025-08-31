@@ -25,12 +25,10 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       bucketName: `mailbox-image-analyzer-${props.environment}`,
       versioned: true,
       encryption: s3.BucketEncryption.S3_MANAGED,
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ACLS,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL, // Block all public access for security
       removalPolicy: props.environment === 'prod' 
         ? cdk.RemovalPolicy.RETAIN 
         : cdk.RemovalPolicy.DESTROY,
-      websiteIndexDocument: 'index.html',
-      websiteErrorDocument: 'index.html',
       lifecycleRules: [
         {
           id: 'DeleteOldImages',
@@ -41,7 +39,7 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       ],
     });
 
-    // Add bucket policy for secure access and public webapp access
+    // Add bucket policy to require HTTPS
     this.imageBucket.addToResourcePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.DENY,
@@ -53,26 +51,6 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
             'aws:SecureTransport': 'false',
           },
         },
-      })
-    );
-
-    // Allow public read access to webapp files (HTML, CSS, JS)
-    this.imageBucket.addToResourcePolicy(
-      new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        principals: [new iam.AnyPrincipal()],
-        actions: ['s3:GetObject'],
-        resources: [
-          this.imageBucket.arnForObjects('*.html'),
-          this.imageBucket.arnForObjects('*.css'),
-          this.imageBucket.arnForObjects('*.js'),
-          this.imageBucket.arnForObjects('*.png'),
-          this.imageBucket.arnForObjects('*.jpg'),
-          this.imageBucket.arnForObjects('*.jpeg'),
-          this.imageBucket.arnForObjects('*.gif'),
-          this.imageBucket.arnForObjects('*.svg'),
-          this.imageBucket.arnForObjects('*.ico'),
-        ],
       })
     );
 
@@ -106,10 +84,20 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       validation: acm.CertificateValidation.fromDns(hostedZone),
     });
 
-    // Create CloudFront distribution
+    // Create Origin Access Identity for CloudFront to access S3
+    const originAccessIdentity = new cloudfront.OriginAccessIdentity(this, 'OriginAccessIdentity', {
+      comment: `OAC for ${props.environment} environment`,
+    });
+
+    // Grant read access to the Origin Access Identity
+    this.imageBucket.grantRead(originAccessIdentity);
+
+    // Create CloudFront distribution with S3 Origin Access Control (OAC)
     this.cloudfrontDistribution = new cloudfront.Distribution(this, 'Distribution', {
       defaultBehavior: {
-        origin: new origins.S3Origin(this.imageBucket),
+        origin: new origins.S3Origin(this.imageBucket, {
+          originAccessIdentity: originAccessIdentity,
+        }),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
       },
@@ -145,12 +133,7 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       exportName: `MailboxImageBucketArn-${props.environment}`,
     });
 
-    // Output the website URL
-    new cdk.CfnOutput(this, 'WebsiteUrl', {
-      value: this.imageBucket.bucketWebsiteUrl,
-      description: 'URL of the webapp website',
-      exportName: `WebsiteUrl-${props.environment}`,
-    });
+
 
     // Output the custom domain URL
     new cdk.CfnOutput(this, 'CustomDomainUrl', {

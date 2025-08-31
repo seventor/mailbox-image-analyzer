@@ -2,5 +2,8 @@
   "hosted-zone:account=867344428767:domainName=g103.net:region=us-east-1": {
     "Id": "/hostedzone/Z09168563J0O48K7T9DJD",
     "Name": "g103.net."
-  }
+  },
+  "acknowledged-issue-numbers": [
+    34892
+  ]
 }
