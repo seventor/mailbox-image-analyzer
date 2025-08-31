@@ -95,6 +95,8 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
     // Create CloudFront distribution with S3 Origin Access Control (OAC)
     this.cloudfrontDistribution = new cloudfront.Distribution(this, 'Distribution', {
       defaultBehavior: {
+        // TODO: Update to S3BucketOrigin when CDK provides concrete implementation
+        // Currently using deprecated S3Origin due to S3BucketOrigin being abstract
         origin: new origins.S3Origin(this.imageBucket, {
           originAccessIdentity: originAccessIdentity,
         }),
