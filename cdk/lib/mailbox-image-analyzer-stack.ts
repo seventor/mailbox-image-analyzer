@@ -312,9 +312,25 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
     // Grant S3 read permissions to get stats function
     this.imageBucket.grantRead(getStatsFunction);
 
+    // Create Lambda function for moving images between folders
+    const moveImagesFunction = new lambda.Function(this, 'MoveImagesFunction', {
+      runtime: lambda.Runtime.PYTHON_3_11,
+      handler: 'move_images.handler',
+      code: lambda.Code.fromAsset('../lambda'),
+      timeout: cdk.Duration.minutes(5),
+      memorySize: 512,
+      environment: {
+        BUCKET_NAME: this.imageBucket.bucketName,
+      },
+    });
+
+    // Grant S3 read/write permissions to move images function
+    this.imageBucket.grantReadWrite(moveImagesFunction);
+
     // Create API Gateway integrations
     const listImagesIntegration = new apigateway.LambdaIntegration(listImagesFunction);
     const getStatsIntegration = new apigateway.LambdaIntegration(getStatsFunction);
+    const moveImagesIntegration = new apigateway.LambdaIntegration(moveImagesFunction);
 
     // Add list images endpoint
     const listImagesResource = api.root.addResource('list-images');
@@ -323,6 +339,10 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
     // Add get stats endpoint
     const getStatsResource = api.root.addResource('stats');
     getStatsResource.addMethod('GET', getStatsIntegration);
+
+    // Add move images endpoint
+    const moveImagesResource = api.root.addResource('move-images');
+    moveImagesResource.addMethod('POST', moveImagesIntegration);
 
     // Output the bucket ARN
     new cdk.CfnOutput(this, 'ImageBucketArn', {

@@ -71,6 +71,140 @@
             background-color: #f8f9fa;
         }
 
+        .move-actions {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #d1d5db;
+            padding: 1rem 2rem;
+            display: none;
+        }
+
+        .move-actions-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .selected-count {
+            font-weight: 500;
+            color: #16191f;
+        }
+
+        .move-buttons {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .move-label {
+            font-size: 0.875rem;
+            color: #5f6b7a;
+            margin-right: 0.5rem;
+        }
+
+        .move-btn {
+            background-color: #0073bb;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .move-btn:hover {
+            background-color: #005a96;
+        }
+
+        .move-btn:disabled {
+            background-color: #d1d5db;
+            cursor: not-allowed;
+        }
+
+        .clear-selection-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .clear-selection-btn:hover {
+            background-color: #c82333;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0073bb;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 6px;
+            color: white;
+            font-weight: 500;
+            z-index: 1001;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            max-width: 400px;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background-color: #28a745;
+        }
+
+        .notification.error {
+            background-color: #dc3545;
+        }
+
+        .notification.info {
+            background-color: #17a2b8;
+        }
+
         .main-content {
             padding: 2rem;
         }
@@ -150,6 +284,16 @@
         }
 
         .image-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .image-card.selected {
+            border: 3px solid #0073bb;
+            background-color: #f0f8ff;
+        }
+
+        .image-card.selected:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
@@ -239,6 +383,20 @@
             <button class="tab-btn" onclick="showTab('with-mail', event)" id="with-mail-btn">With Mail</button>
             <button class="tab-btn" onclick="showTab('without-mail', event)" id="without-mail-btn">Without Mail</button>
         </div>
+        
+        <!-- Move Actions Bar (hidden by default) -->
+        <div id="move-actions" class="move-actions" style="display: none;">
+            <div class="move-actions-content">
+                <span class="selected-count">0 images selected</span>
+                <div class="move-buttons">
+                    <span class="move-label">Move to:</span>
+                    <button id="move-usortert" class="move-btn" onclick="moveSelectedImages('usortert')">Usortert</button>
+                    <button id="move-with-mail" class="move-btn" onclick="moveSelectedImages('ai-training-data/with-mail')">With Mail</button>
+                    <button id="move-without-mail" class="move-btn" onclick="moveSelectedImages('ai-training-data/without-mail')">Without Mail</button>
+                </div>
+                <button class="clear-selection-btn" onclick="clearSelection()">Clear Selection</button>
+            </div>
+        </div>
     
     <div class="main-content">
         <!-- Overview Tab -->
@@ -279,6 +437,8 @@
         const BUCKET_NAME = 'mailbox-image-analyzer-dev';
         const REGION = 'us-east-1';
         let imageCache = {};
+        let selectedImages = new Set();
+        let currentFolder = '';
 
         // Initialize the app
         document.addEventListener('DOMContentLoaded', function() {
@@ -311,15 +471,22 @@
                 event.target.classList.add('active');
             }
             
-            // Load images for the selected tab
+            // Update current folder and clear selection
             if (tabName === 'usortert') {
+                currentFolder = 'usortert';
                 loadImages('usortert', 'usortert-gallery');
             } else if (tabName === 'with-mail') {
+                currentFolder = 'ai-training-data/with-mail';
                 loadImages('ai-training-data/with-mail', 'with-mail-gallery');
             } else if (tabName === 'without-mail') {
+                currentFolder = 'ai-training-data/without-mail';
                 loadImages('ai-training-data/without-mail', 'without-mail-gallery');
+            } else {
+                currentFolder = '';
             }
-            // Overview tab doesn't need to load images
+            
+            // Clear selection when switching tabs
+            clearSelection();
         }
 
         async function loadStatistics() {
@@ -398,7 +565,14 @@
             images.forEach((image, index) => {
                 const imageCard = document.createElement('div');
                 imageCard.className = 'image-card';
-                imageCard.onclick = () => viewImage(image.original);
+                imageCard.dataset.imageKey = image.original;
+                imageCard.dataset.imageName = image.name;
+                
+                // Handle selection click
+                imageCard.onclick = (e) => {
+                    e.preventDefault();
+                    toggleImageSelection(image.original, imageCard);
+                };
                 
                 const imageSrc = image.thumbnail ? 
                     `${CLOUDFRONT_URL}/${image.thumbnail}` : 
@@ -478,6 +652,156 @@
         function viewImage(imageKey) {
             const url = `${CLOUDFRONT_URL}/${imageKey}`;
             window.open(url, '_blank');
+        }
+
+        function toggleImageSelection(imageKey, imageCard) {
+            if (selectedImages.has(imageKey)) {
+                // Deselect
+                selectedImages.delete(imageKey);
+                imageCard.classList.remove('selected');
+            } else {
+                // Select
+                selectedImages.add(imageKey);
+                imageCard.classList.add('selected');
+            }
+            
+            updateMoveActions();
+        }
+
+        function updateMoveActions() {
+            const moveActions = document.getElementById('move-actions');
+            const selectedCount = document.querySelector('.selected-count');
+            
+            if (selectedImages.size > 0 && currentFolder && currentFolder !== 'overview') {
+                // Show move actions
+                moveActions.style.display = 'block';
+                selectedCount.textContent = `${selectedImages.size} image${selectedImages.size > 1 ? 's' : ''} selected`;
+                
+                // Disable move buttons for current folder
+                const currentFolderBtn = document.querySelector(`#move-${currentFolder.replace('/', '-')}`);
+                if (currentFolderBtn) {
+                    currentFolderBtn.disabled = true;
+                }
+                
+                // Enable other move buttons
+                document.querySelectorAll('.move-btn').forEach(btn => {
+                    if (btn !== currentFolderBtn) {
+                        btn.disabled = false;
+                    }
+                });
+            } else {
+                // Hide move actions
+                moveActions.style.display = 'none';
+            }
+        }
+
+        function clearSelection() {
+            selectedImages.clear();
+            
+            // Remove selected class from all image cards
+            document.querySelectorAll('.image-card.selected').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Hide move actions
+            document.getElementById('move-actions').style.display = 'none';
+        }
+
+        async function moveSelectedImages(targetFolder) {
+            if (selectedImages.size === 0 || !currentFolder) {
+                return;
+            }
+
+            const moveActions = document.getElementById('move-actions');
+            moveActions.style.display = 'none';
+            
+            // Show loading state
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading-overlay';
+            loadingDiv.innerHTML = `
+                <div class="loading-content">
+                    <div class="spinner"></div>
+                    <p>Moving ${selectedImages.size} image${selectedImages.size > 1 ? 's' : ''}...</p>
+                </div>
+            `;
+            document.body.appendChild(loadingDiv);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/move-images`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        sourceFolder: currentFolder,
+                        targetFolder: targetFolder,
+                        imageKeys: Array.from(selectedImages)
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Clear selection
+                    clearSelection();
+                    
+                    // Reload current tab images
+                    if (currentFolder === 'usortert') {
+                        await loadImages('usortert', 'usortert-gallery');
+                    } else if (currentFolder === 'ai-training-data/with-mail') {
+                        await loadImages('ai-training-data/with-mail', 'with-mail-gallery');
+                    } else if (currentFolder === 'ai-training-data/without-mail') {
+                        await loadImages('ai-training-data/without-mail', 'without-mail-gallery');
+                    }
+                    
+                    // Reload statistics
+                    await loadStatistics();
+                    
+                    // Show success message
+                    showNotification('Images moved successfully!', 'success');
+                } else {
+                    throw new Error(result.error || 'Failed to move images');
+                }
+                
+            } catch (error) {
+                console.error('Error moving images:', error);
+                showNotification(`Error moving images: ${error.message}`, 'error');
+                
+                // Show move actions again
+                moveActions.style.display = 'block';
+            } finally {
+                // Remove loading overlay
+                document.body.removeChild(loadingDiv);
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            // Add to page
+            document.body.appendChild(notification);
+            
+            // Show notification
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 100);
+            
+            // Hide and remove after 3 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
         }
 
 
