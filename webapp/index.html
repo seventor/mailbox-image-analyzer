@@ -13,156 +13,129 @@
 
         body {
             font-family: 'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background: #f2f3f3;
-            min-height: 100vh;
+            background-color: #f2f3f3;
             color: #16191f;
             line-height: 1.5;
         }
 
         .header {
-            background: #232f3e;
-            padding: 1rem 2rem;
-            border-bottom: 1px solid #3c4043;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .header h1 {
-            color: #ffffff;
-            font-size: 1.25rem;
-            font-weight: 500;
-            margin-bottom: 0.75rem;
-        }
-
-        .stats {
-            display: flex;
-            gap: 2rem;
-            margin-bottom: 1rem;
-        }
-
-        .stat-item {
-            background: #ffffff;
-            color: #16191f;
-            padding: 0.75rem 1rem;
-            border-radius: 4px;
-            font-size: 0.875rem;
-            font-weight: 400;
-            border: 1px solid #d5dbdb;
-            box-shadow: 0 1px 1px rgba(0,0,0,0.05);
-        }
-
-        .folder-tabs {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .tab {
-            background: #ffffff;
-            border: 1px solid #d5dbdb;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 400;
-            transition: all 0.15s ease;
-            font-size: 0.875rem;
-            color: #16191f;
-        }
-
-        .tab:hover {
-            background: #fafafa;
-            border-color: #879596;
-        }
-
-        .tab.active {
-            background: #ec7211;
-            border-color: #ec7211;
-            color: #ffffff;
-        }
-
-        .main-content {
-            padding: 1.5rem;
-            max-width: 1400px;
-            margin: 0 auto;
-            background: #f2f3f3;
-        }
-
-        .gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-
-        .image-card {
-            background: #ffffff;
-            border-radius: 4px;
-            overflow: hidden;
-            border: 1px solid #d5dbdb;
-            box-shadow: 0 1px 1px rgba(0,0,0,0.05);
-            transition: all 0.15s ease;
-            cursor: pointer;
-        }
-
-        .image-card:hover {
-            border-color: #879596;
+            background-color: #232f3e;
+            color: white;
+            padding: 1.5rem 2rem;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        .image-card img {
-            width: 100%;
-            height: 80px;
-            object-fit: cover;
+        .header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .upload-section {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .upload-btn {
+            background-color: #ec7211;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .upload-btn:hover {
+            background-color: #d65a00;
+        }
+
+        .upload-btn.primary {
+            background-color: #0073bb;
+        }
+
+        .upload-btn.primary:hover {
+            background-color: #005a96;
+        }
+
+        .tab-navigation {
+            background-color: white;
+            border-bottom: 1px solid #d1d5db;
+            padding: 0 2rem;
+            display: flex;
+            gap: 0;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #5f6b7a;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .tab-btn:hover {
+            color: #16191f;
+            background-color: #f8f9fa;
+        }
+
+        .tab-btn.active {
+            color: #0073bb;
+            border-bottom-color: #0073bb;
+            background-color: #f8f9fa;
+        }
+
+        .main-content {
+            padding: 2rem;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
             display: block;
         }
 
-        .image-info {
-            padding: 0.4rem;
+        .overview-section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
         }
 
-        .image-name {
-            font-size: 0.625rem;
-            font-weight: 400;
-            color: #5f6b7a;
-            margin-bottom: 0.25rem;
-            word-break: break-all;
-        }
-
-        .image-date {
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: #16191f;
-        }
-
-        .latest-section {
-            background: #ffffff;
-            border: 1px solid #d5dbdb;
-            border-radius: 4px;
-            padding: 1rem;
+        .overview-section h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
             margin-bottom: 1.5rem;
-            box-shadow: 0 1px 1px rgba(0,0,0,0.05);
-        }
-
-        .latest-section h2 {
             color: #16191f;
-            font-size: 1rem;
-            font-weight: 500;
-            margin-bottom: 0.75rem;
         }
 
         .latest-image {
             display: flex;
-            align-items: center;
-            gap: 1rem;
+            align-items: flex-start;
+            gap: 1.5rem;
+            background-color: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 6px;
+            border: 1px solid #e1e5e9;
         }
 
         .latest-thumbnail {
-            width: 120px;
-            height: 90px;
+            width: 200px;
+            height: 150px;
             object-fit: cover;
-            border-radius: 4px;
-            border: 1px solid #d5dbdb;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
         }
 
         .latest-info {
@@ -170,32 +143,68 @@
         }
 
         .latest-filename {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #16191f;
+            margin-bottom: 0.5rem;
+        }
+
+        .latest-datetime {
             font-size: 0.875rem;
+            color: #5f6b7a;
+            font-weight: 500;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .image-card {
+            background-color: white;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .image-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .image-card img {
+            width: 100%;
+            height: 80px;
+            object-fit: cover;
+        }
+
+        .image-info {
+            padding: 0.4rem;
+        }
+
+        .image-date {
+            font-size: 0.75rem;
             font-weight: 500;
             color: #16191f;
             margin-bottom: 0.25rem;
         }
 
-        .latest-datetime {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #16191f;
+        .image-name {
+            font-size: 0.625rem;
+            font-weight: 400;
+            color: #5f6b7a;
+            word-break: break-all;
         }
 
         .loading {
             text-align: center;
             padding: 2rem;
-            color: #16191f;
-            font-size: 1rem;
-        }
-
-        .error {
-            background: #fdf2f2;
-            color: #d63384;
-            padding: 1rem;
-            border-radius: 4px;
-            margin: 1rem 0;
-            border: 1px solid #f5c6cb;
+            color: #5f6b7a;
+            font-size: 0.875rem;
         }
 
         .empty-state {
@@ -218,21 +227,6 @@
                 padding: 1rem;
             }
             
-            .stats {
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-            
-            .folder-tabs {
-                flex-wrap: wrap;
-            }
-            
-            .tab {
-                flex: 1;
-                min-width: 120px;
-                text-align: center;
-            }
-            
             .main-content {
                 padding: 1rem;
             }
@@ -241,40 +235,67 @@
                 grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
                 gap: 0.4rem;
             }
+            
+            .latest-image {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            
+            .latest-thumbnail {
+                width: 150px;
+                height: 112px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>📸 Mailbox Image Analyzer</h1>
-        <div class="stats">
-            <div class="stat-item">
-                📁 Unsorted: <span id="unsorted-count">-</span>
-            </div>
-            <div class="stat-item">
-                📬 With Mail: <span id="with-mail-count">-</span>
-            </div>
-            <div class="stat-item">
-                📭 Without Mail: <span id="without-mail-count">-</span>
-            </div>
-        </div>
-        <div class="folder-tabs">
-            <div class="tab active" data-folder="usortert">📁 Unsorted</div>
-            <div class="tab" data-folder="ai-training-data/with-mail">📬 With Mail</div>
-            <div class="tab" data-folder="ai-training-data/without-mail">📭 Without Mail</div>
+        <div class="upload-section">
+            <input type="file" id="fileInput" accept="image/*" style="display: none;">
+            <button onclick="document.getElementById('fileInput').click()" class="upload-btn">📁 Choose File</button>
+            <button onclick="uploadFile()" class="upload-btn primary">🚀 Upload</button>
         </div>
     </div>
-
+    
+        <div class="tab-navigation">
+            <button class="tab-btn active" onclick="showTab('overview', event)" id="overview-btn">Overview</button>
+            <button class="tab-btn" onclick="showTab('usortert', event)" id="usortert-btn">Usortert</button>
+            <button class="tab-btn" onclick="showTab('with-mail', event)" id="with-mail-btn">With Mail</button>
+            <button class="tab-btn" onclick="showTab('without-mail', event)" id="without-mail-btn">Without Mail</button>
+        </div>
+    
     <div class="main-content">
-        <div class="latest-section">
-            <h2>📸 Latest Upload</h2>
-            <div id="latest-image" class="latest-image">
-                <div class="loading">Loading latest image...</div>
+        <!-- Overview Tab -->
+        <div id="overview-tab" class="tab-content active">
+            <div class="overview-section">
+                <h2>📸 Latest Upload</h2>
+                <div id="latest-image" class="latest-image">
+                    <div class="loading">Loading latest image...</div>
+                </div>
             </div>
         </div>
         
-        <div id="gallery" class="gallery">
-            <div class="loading">Loading images...</div>
+        <!-- Usortert Tab -->
+        <div id="usortert-tab" class="tab-content">
+            <div class="gallery" id="usortert-gallery">
+                <div class="loading">Loading images...</div>
+            </div>
+        </div>
+        
+        <!-- With Mail Tab -->
+        <div id="with-mail-tab" class="tab-content">
+            <div class="gallery" id="with-mail-gallery">
+                <div class="loading">Loading images...</div>
+            </div>
+        </div>
+        
+        <!-- Without Mail Tab -->
+        <div id="without-mail-tab" class="tab-content">
+            <div class="gallery" id="without-mail-gallery">
+                <div class="loading">Loading images...</div>
+            </div>
         </div>
     </div>
 
@@ -283,35 +304,48 @@
         const CLOUDFRONT_URL = 'https://mailbox-dev.g103.net';
         const BUCKET_NAME = 'mailbox-image-analyzer-dev';
         const REGION = 'us-east-1';
-        let currentFolder = 'usortert';
         let imageCache = {};
 
         // Initialize the app
         document.addEventListener('DOMContentLoaded', function() {
-            setupEventListeners();
             loadStatistics();
             loadLatestImage();
-            loadImages(currentFolder);
+            loadImagesForAllTabs();
         });
 
-        function setupEventListeners() {
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.addEventListener('click', function() {
-                    const folder = this.dataset.folder;
-                    switchFolder(folder);
-                });
-            });
-        }
-
-        function switchFolder(folder) {
-            // Update active tab
-            document.querySelectorAll('.tab').forEach(tab => {
+        function showTab(tabName, event) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
-            document.querySelector(`[data-folder="${folder}"]`).classList.add('active');
             
-            currentFolder = folder;
-            loadImages(folder);
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            const tabContent = document.getElementById(`${tabName}-tab`);
+            if (tabContent) {
+                tabContent.classList.add('active');
+            } else {
+                console.error(`Tab content not found: ${tabName}-tab`);
+            }
+            
+            // Add active class to clicked tab button
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
+            
+            // Load images for the selected tab
+            if (tabName === 'usortert') {
+                loadImages('usortert', 'usortert-gallery');
+            } else if (tabName === 'with-mail') {
+                loadImages('ai-training-data/with-mail', 'with-mail-gallery');
+            } else if (tabName === 'without-mail') {
+                loadImages('ai-training-data/without-mail', 'without-mail-gallery');
+            }
+            // Overview tab doesn't need to load images
         }
 
         async function loadStatistics() {
@@ -322,62 +356,98 @@
                 }
                 const data = await response.json();
                 
-                document.getElementById('unsorted-count').textContent = data.stats['usortert'] || 0;
-                document.getElementById('with-mail-count').textContent = data.stats['ai-training-data/with-mail'] || 0;
-                document.getElementById('without-mail-count').textContent = data.stats['ai-training-data/without-mail'] || 0;
+                // Update tab labels with counts
+                const usortertCount = data.stats['usortert'] || 0;
+                const withMailCount = data.stats['ai-training-data/with-mail'] || 0;
+                const withoutMailCount = data.stats['ai-training-data/without-mail'] || 0;
+                
+                document.getElementById('usortert-btn').textContent = `Usortert (${usortertCount})`;
+                document.getElementById('with-mail-btn').textContent = `With Mail (${withMailCount})`;
+                document.getElementById('without-mail-btn').textContent = `Without Mail (${withoutMailCount})`;
                 
             } catch (error) {
                 console.error('Error loading statistics:', error);
             }
         }
 
-        async function loadImages(folder) {
-            const gallery = document.getElementById('gallery');
+        async function loadImagesForAllTabs() {
+            // Load images for all tabs
+            await loadImages('usortert', 'usortert-gallery');
+            await loadImages('ai-training-data/with-mail', 'with-mail-gallery');
+            await loadImages('ai-training-data/without-mail', 'without-mail-gallery');
+        }
+
+        async function loadImages(folder, galleryId) {
+            const gallery = document.getElementById(galleryId);
+            if (!gallery) {
+                console.error(`Gallery element not found: ${galleryId}`);
+                return;
+            }
+            
             gallery.innerHTML = '<div class="loading">Loading images...</div>';
             
             try {
-                const response = await fetch(`${API_BASE_URL}/list-images?folder=${encodeURIComponent(folder)}`);
+                const url = `${API_BASE_URL}/list-images?folder=${encodeURIComponent(folder)}`;
+                
+                const response = await fetch(url);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
-                displayImages(data.images, folder);
+                
+                if (data.images && data.images.length > 0) {
+                    displayImages(data.images, gallery);
+                } else {
+                    console.log('No images found');
+                    gallery.innerHTML = `
+                        <div class="empty-state">
+                            <h3>No images found</h3>
+                            <p>No images in the ${folder} folder.</p>
+                        </div>
+                    `;
+                }
+                
             } catch (error) {
-                gallery.innerHTML = `<div class="error">Error loading images: ${error.message}</div>`;
+                console.error('Error loading images:', error);
+                gallery.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Error loading images</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
             }
         }
 
-        function displayImages(images, folder) {
-            const gallery = document.getElementById('gallery');
+        function displayImages(images, gallery) {
+            gallery.innerHTML = '';
             
-            if (images.length === 0) {
-                gallery.innerHTML = `
-                    <div class="empty-state">
-                        <h3>No images found</h3>
-                        <p>No images found in the ${folder} folder.</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            gallery.innerHTML = images.map(image => `
-                <div class="image-card" onclick="viewImage('${image.original}')">
-                    <img src="${CLOUDFRONT_URL}/${image.thumbnail}" 
-                         alt="${image.name}"
-                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDIwMCAxNTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTUwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iNzUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk0QTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+VGh1bWJuYWlsIG5vdCBmb3VuZDwvdGV4dD4KPC9zdmc+'">
+            images.forEach((image, index) => {
+                const imageCard = document.createElement('div');
+                imageCard.className = 'image-card';
+                imageCard.onclick = () => viewImage(image.original);
+                
+                const imageSrc = image.thumbnail ? 
+                    `${CLOUDFRONT_URL}/${image.thumbnail}` : 
+                    `${CLOUDFRONT_URL}/${image.original}`;
+                
+                imageCard.innerHTML = `
+                    <img src="${imageSrc}" 
+                         alt="${image.name}" 
+                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDIwMCAxNTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTUwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iNzUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk0QTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+VGh1bWJuYWlsIG5vdCBmb3VuZDwvdGV4dD4KPC9zdmc+'>
                     <div class="image-info">
-                        <div class="image-date">${formatDate(new Date(image.date))}</div>
+                        <div class="image-date">${image.date ? formatDate(new Date(image.date)) : 'Date not available'}</div>
                         <div class="image-name">${image.name}.jpg</div>
                     </div>
-                </div>
-            `).join('');
+                `;
+                
+                gallery.appendChild(imageCard);
+            });
         }
 
         async function loadLatestImage() {
             const latestSection = document.getElementById('latest-image');
             
             try {
-                // Try to get the latest image from uploads folder
                 const response = await fetch(`${API_BASE_URL}/list-images?folder=uploads`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -396,7 +466,7 @@
                         <img src="${imageSrc}" 
                              alt="Latest upload" 
                              class="latest-thumbnail"
-                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDIwMCAxNTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTUwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iNzUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIjk0QTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+VGh1bWJuYWlsIG5vdCBmb3VuZDwvdGV4dD4KPC9zdmc+'>
+                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDIwMCAxNTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTUwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iNzUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk0QTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+VGh1bWJuYWlsIG5vdCBmb3VuZDwvdGV4dD4KPC9zdmc+'>
                         <div class="latest-info">
                             <div class="latest-filename">${latest.name}.jpg</div>
                             <div class="latest-datetime">${latest.date ? formatDate(new Date(latest.date)) : 'Date not available'}</div>
@@ -405,14 +475,18 @@
                 } else {
                     latestSection.innerHTML = `
                         <div class="empty-state">
-                            <p>No latest upload found</p>
+                            <h3>No latest upload</h3>
+                            <p>No images have been uploaded yet.</p>
                         </div>
                     `;
                 }
+                
             } catch (error) {
+                console.error('Error loading latest image:', error);
                 latestSection.innerHTML = `
-                    <div class="error">
-                        Error loading latest image: ${error.message}
+                    <div class="empty-state">
+                        <h3>Error loading latest image</h3>
+                        <p>${error.message}</p>
                     </div>
                 `;
             }
@@ -432,8 +506,46 @@
             window.open(url, '_blank');
         }
 
-        // Refresh statistics every 30 seconds
-        setInterval(loadStatistics, 30000);
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file first.');
+                return;
+            }
+            
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file.');
+                return;
+            }
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetch(`${API_BASE_URL}/upload`, {
+                    method: 'POST',
+                    body: file
+                });
+                
+                if (response.ok) {
+                    alert('File uploaded successfully!');
+                    fileInput.value = '';
+                    
+                    // Refresh the latest image and statistics
+                    loadLatestImage();
+                    loadStatistics();
+                } else {
+                    const errorData = await response.json();
+                    alert(`Upload failed: ${errorData.error || 'Unknown error'}`);
+                }
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert(`Upload failed: ${error.message}`);
+            }
+        }
     </script>
 </body>
 </html>
