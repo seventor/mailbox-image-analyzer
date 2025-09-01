@@ -153,6 +153,7 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       destinationKeyPrefix: '', // Upload to root of bucket
       distribution: this.cloudfrontDistribution,
       distributionPaths: ['/*'],
+      prune: false, // Do not delete existing files in the bucket
     });
 
 
@@ -179,6 +180,13 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       description: 'Pillow library for image processing',
     });
 
+    // Create common utils layer (thumbnail_utils)
+    const commonUtilsLayer = new lambda.LayerVersion(this, 'CommonUtilsLayer', {
+      code: lambda.Code.fromAsset('../lambda/common-layer'),
+      compatibleRuntimes: [lambda.Runtime.PYTHON_3_11],
+      description: 'Common utilities (thumbnail_utils) for image functions',
+    });
+
     // Create Lambda function for image processing
     const imageProcessorFunction = new lambda.Function(this, 'ImageProcessorFunction', {
       runtime: lambda.Runtime.PYTHON_3_11,
@@ -186,7 +194,7 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       code: lambda.Code.fromAsset('../lambda'),
       timeout: cdk.Duration.minutes(2),
       memorySize: 512,
-      layers: [pillowLayer],
+      layers: [pillowLayer, commonUtilsLayer],
       environment: {
         BUCKET_NAME: this.imageBucket.bucketName,
       },
@@ -209,7 +217,7 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       code: lambda.Code.fromAsset('../lambda'),
       timeout: cdk.Duration.minutes(5),
       memorySize: 512,
-      layers: [pillowLayer],
+      layers: [pillowLayer, commonUtilsLayer],
       environment: {
         BUCKET_NAME: this.imageBucket.bucketName,
       },

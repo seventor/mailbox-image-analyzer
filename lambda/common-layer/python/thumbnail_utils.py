@@ -29,9 +29,9 @@ def create_thumbnail(bucket_name, source_key, thumbnail_key):
         # Create thumbnail using PIL
         image = Image.open(io.BytesIO(image_data))
         
-        # Calculate new height maintaining aspect ratio (128px wide)
+        # Calculate new height maintaining aspect ratio (256px wide)
         width, height = image.size
-        new_width = 128
+        new_width = 256
         new_height = int((height * new_width) / width)
         
         # Resize image
@@ -64,3 +64,5 @@ def create_thumbnail(bucket_name, source_key, thumbnail_key):
             'source_key': source_key,
             'thumbnail_key': thumbnail_key
         }
+
+
