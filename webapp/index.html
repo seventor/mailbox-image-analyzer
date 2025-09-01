@@ -305,21 +305,59 @@
         }
 
         .image-info {
-            padding: 0.4rem;
+            padding: 0.1rem;
         }
 
         .image-date {
-            font-size: 0.75rem;
+            font-size: 0.78rem;
             font-weight: 500;
             color: #16191f;
-            margin-bottom: 0.25rem;
+            margin: 0.3rem;
+            line-height: 1.2;
         }
 
         .image-name {
-            font-size: 0.625rem;
+            font-size: 0.70rem;
             font-weight: 400;
             color: #5f6b7a;
             word-break: break-all;
+            line-height: 1.2;
+            margin: 0.3rem;
+        }
+
+        .folder-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 0 0.5rem;
+        }
+
+        .folder-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #16191f;
+        }
+
+        .select-all-btn {
+            background-color: #0073bb;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .select-all-btn:hover {
+            background-color: #005a96;
+        }
+
+        .select-all-btn:disabled {
+            background-color: #d1d5db;
+            cursor: not-allowed;
         }
 
         .loading {
@@ -411,6 +449,10 @@
         
         <!-- Usortert Tab -->
         <div id="usortert-tab" class="tab-content">
+            <div class="folder-header">
+                <h2 class="folder-title">📁 Usortert Images</h2>
+                <button class="select-all-btn" onclick="selectAllImages('usortert')">Select All</button>
+            </div>
             <div class="gallery" id="usortert-gallery">
                 <div class="loading">Loading images...</div>
             </div>
@@ -418,6 +460,10 @@
         
         <!-- With Mail Tab -->
         <div id="with-mail-tab" class="tab-content">
+            <div class="folder-header">
+                <h2 class="folder-title">📬 With Mail Images</h2>
+                <button class="select-all-btn" onclick="selectAllImages('ai-training-data/with-mail')">Select All</button>
+            </div>
             <div class="gallery" id="with-mail-gallery">
                 <div class="loading">Loading images...</div>
             </div>
@@ -425,6 +471,10 @@
         
         <!-- Without Mail Tab -->
         <div id="without-mail-tab" class="tab-content">
+            <div class="folder-header">
+                <h2 class="folder-title">📭 Without Mail Images</h2>
+                <button class="select-all-btn" onclick="selectAllImages('ai-training-data/without-mail')">Select All</button>
+            </div>
             <div class="gallery" id="without-mail-gallery">
                 <div class="loading">Loading images...</div>
             </div>
@@ -581,7 +631,7 @@
                 imageCard.innerHTML = `
                     <img src="${imageSrc}" 
                          alt="${image.name}" 
-                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDIwMCAxNTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTUwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iNzUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk0QTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+VGh1bWJuYWlsIG5vdCBmb3VuZDwvdGV4dD4KPC9zdmc+'>
+                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDIwMCAxNTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTUwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iNzUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk0QTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+VGh1bWJuYWlsIG5vdCBmb3VuZDwvdGV4dD4KPC9zdmc+"/>
                     <div class="image-info">
                         <div class="image-date">${image.date ? formatDate(new Date(image.date)) : 'Date not available'}</div>
                         <div class="image-name">${image.name}.jpg</div>
@@ -802,6 +852,43 @@
                     }
                 }, 300);
             }, 3000);
+        }
+
+        function selectAllImages(folder) {
+            // Clear current selection first
+            clearSelection();
+            
+            // Get all image cards in the current folder
+            let galleryId;
+            if (folder === 'usortert') {
+                galleryId = 'usortert-gallery';
+            } else if (folder === 'ai-training-data/with-mail') {
+                galleryId = 'with-mail-gallery';
+            } else if (folder === 'ai-training-data/without-mail') {
+                galleryId = 'without-mail-gallery';
+            } else {
+                return;
+            }
+            
+            const gallery = document.getElementById(galleryId);
+            const imageCards = gallery.querySelectorAll('.image-card');
+            
+            // Select all images in this folder
+            imageCards.forEach(card => {
+                const imageKey = card.dataset.imageKey;
+                if (imageKey) {
+                    selectedImages.add(imageKey);
+                    card.classList.add('selected');
+                }
+            });
+            
+            // Update current folder and move actions
+            currentFolder = folder;
+            updateMoveActions();
+            
+            // Show notification
+            const count = imageCards.length;
+            showNotification(`${count} image${count > 1 ? 's' : ''} selected`, 'info');
         }
 
 
