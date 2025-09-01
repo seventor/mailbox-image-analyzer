@@ -31,9 +31,7 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       versioned: true,
       encryption: s3.BucketEncryption.S3_MANAGED,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL, // Block all public access for security
-      removalPolicy: props.environment === 'prod' 
-        ? cdk.RemovalPolicy.RETAIN 
-        : cdk.RemovalPolicy.DESTROY,
+      removalPolicy: cdk.RemovalPolicy.RETAIN, // Keep data safe in both environments
       lifecycleRules: [
         {
           id: 'DeleteOldImages',
@@ -66,12 +64,7 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       exportName: `MailboxImageBucketName-${props.environment}`,
     });
 
-    // Deploy webapp files to the same S3 bucket
-    new s3deploy.BucketDeployment(this, 'WebappDeployment', {
-      sources: [s3deploy.Source.asset('../webapp')],
-      destinationBucket: this.imageBucket,
-      destinationKeyPrefix: '', // Upload to root of bucket
-    });
+
 
     // Get the hosted zone for g103.net
     const hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
@@ -151,6 +144,15 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       target: route53.RecordTarget.fromAlias(
         new route53Targets.CloudFrontTarget(this.cloudfrontDistribution)
       ),
+    });
+
+    // Deploy webapp files to the same S3 bucket with cache invalidation
+    new s3deploy.BucketDeployment(this, 'WebappDeployment', {
+      sources: [s3deploy.Source.asset('../webapp')],
+      destinationBucket: this.imageBucket,
+      destinationKeyPrefix: '', // Upload to root of bucket
+      distribution: this.cloudfrontDistribution,
+      distributionPaths: ['/*'],
     });
 
 
@@ -271,6 +273,48 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
     // Add upload endpoint
     const uploadResource = api.root.addResource('upload');
     uploadResource.addMethod('POST', uploadIntegration);
+
+    // Create Lambda function for listing images
+    const listImagesFunction = new lambda.Function(this, 'ListImagesFunction', {
+      runtime: lambda.Runtime.PYTHON_3_11,
+      handler: 'list_images.handler',
+      code: lambda.Code.fromAsset('../lambda'),
+      timeout: cdk.Duration.minutes(1),
+      memorySize: 256,
+      environment: {
+        BUCKET_NAME: this.imageBucket.bucketName,
+      },
+    });
+
+    // Grant S3 read permissions to list images function
+    this.imageBucket.grantRead(listImagesFunction);
+
+    // Create Lambda function for getting statistics
+    const getStatsFunction = new lambda.Function(this, 'GetStatsFunction', {
+      runtime: lambda.Runtime.PYTHON_3_11,
+      handler: 'get_stats.handler',
+      code: lambda.Code.fromAsset('../lambda'),
+      timeout: cdk.Duration.minutes(1),
+      memorySize: 256,
+      environment: {
+        BUCKET_NAME: this.imageBucket.bucketName,
+      },
+    });
+
+    // Grant S3 read permissions to get stats function
+    this.imageBucket.grantRead(getStatsFunction);
+
+    // Create API Gateway integrations
+    const listImagesIntegration = new apigateway.LambdaIntegration(listImagesFunction);
+    const getStatsIntegration = new apigateway.LambdaIntegration(getStatsFunction);
+
+    // Add list images endpoint
+    const listImagesResource = api.root.addResource('list-images');
+    listImagesResource.addMethod('GET', listImagesIntegration);
+
+    // Add get stats endpoint
+    const getStatsResource = api.root.addResource('stats');
+    getStatsResource.addMethod('GET', getStatsIntegration);
 
     // Output the bucket ARN
     new cdk.CfnOutput(this, 'ImageBucketArn', {
