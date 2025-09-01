@@ -334,6 +334,21 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
     // Grant S3 read/write permissions to move images function
     this.imageBucket.grantReadWrite(moveImagesFunction);
 
+    // Create Lambda function for getting comparison status
+    const getComparisonStatusFunction = new lambda.Function(this, 'GetComparisonStatusFunction', {
+      runtime: lambda.Runtime.PYTHON_3_11,
+      handler: 'get_comparison_status.handler',
+      code: lambda.Code.fromAsset('../lambda'),
+      timeout: cdk.Duration.minutes(1),
+      memorySize: 256,
+      environment: {
+        BUCKET_NAME: this.imageBucket.bucketName,
+      },
+    });
+
+    // Grant S3 read permissions to comparison status function
+    this.imageBucket.grantRead(getComparisonStatusFunction);
+
     // Create Lambda function for median image creation
     const createMedianImageFunction = new lambda.Function(this, 'CreateMedianImageFunction', {
       runtime: lambda.Runtime.PYTHON_3_11,
@@ -365,10 +380,30 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
     // Add Lambda as target for the EventBridge rule
     createMedianImageRule.addTarget(new eventTargets.LambdaFunction(createMedianImageFunction));
 
+    // Create Lambda function for comparing latest image with median
+    const compareLatestWithMedianFunction = new lambda.Function(this, 'CompareLatestWithMedianFunction', {
+      runtime: lambda.Runtime.PYTHON_3_11,
+      handler: 'compare_latest_with_median.handler',
+      code: lambda.Code.fromAsset('../lambda'),
+      timeout: cdk.Duration.minutes(5),
+      memorySize: 1024,
+      layers: [pillowLayer, numpyLayer],
+      environment: {
+        BUCKET_NAME: this.imageBucket.bucketName,
+      },
+    });
+
+    // Grant S3 read/write permissions to comparison function
+    this.imageBucket.grantReadWrite(compareLatestWithMedianFunction);
+
+    // Grant permission for image processor to invoke comparison function
+    compareLatestWithMedianFunction.grantInvoke(imageProcessorFunction);
+
     // Create API Gateway integrations
     const listImagesIntegration = new apigateway.LambdaIntegration(listImagesFunction);
     const getStatsIntegration = new apigateway.LambdaIntegration(getStatsFunction);
     const moveImagesIntegration = new apigateway.LambdaIntegration(moveImagesFunction);
+    const getComparisonStatusIntegration = new apigateway.LambdaIntegration(getComparisonStatusFunction);
 
     // Add list images endpoint
     const listImagesResource = api.root.addResource('list-images');
@@ -381,6 +416,10 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
     // Add move images endpoint
     const moveImagesResource = api.root.addResource('move-images');
     moveImagesResource.addMethod('POST', moveImagesIntegration);
+
+    // Add comparison status endpoint
+    const comparisonStatusResource = api.root.addResource('comparison-status');
+    comparisonStatusResource.addMethod('GET', getComparisonStatusIntegration);
 
     // Output the bucket ARN
     new cdk.CfnOutput(this, 'ImageBucketArn', {

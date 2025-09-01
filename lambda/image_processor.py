@@ -7,6 +7,7 @@ import io
 from thumbnail_utils import create_thumbnail
 
 s3_client = boto3.client('s3')
+lambda_client = boto3.client('lambda')
 
 def handler(event, context):
     try:
@@ -57,6 +58,21 @@ def handler(event, context):
                 'statusCode': 500,
                 'body': json.dumps({'error': f'Failed to create thumbnail: {thumbnail_result["error"]}'})
             }
+        
+        # Invoke comparison function asynchronously
+        try:
+            lambda_client.invoke(
+                FunctionName=f'{os.environ.get("BUCKET_NAME", "mailbox-image-analyzer-dev")}-CompareLatestWithMedianFunction',
+                InvocationType='Event',  # Asynchronous invocation
+                Payload=json.dumps({
+                    'triggered_by': 'image_processor',
+                    'timestamp': timestamp
+                })
+            )
+            print("Comparison function invoked successfully")
+        except Exception as e:
+            print(f"Error invoking comparison function: {str(e)}")
+            # Don't fail the main function if comparison fails
         
         return {
             'statusCode': 200,

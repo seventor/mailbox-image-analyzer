@@ -232,7 +232,18 @@
             margin-bottom: 2rem;
         }
 
+        .overview-grid-three {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
         .overview-grid .overview-section {
+            margin-bottom: 0;
+        }
+
+        .overview-grid-three .overview-section {
             margin-bottom: 0;
         }
 
@@ -407,6 +418,11 @@
                 gap: 1rem;
             }
             
+            .overview-grid-three {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
             .gallery {
                 grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
                 gap: 0.4rem;
@@ -455,7 +471,7 @@
     <div class="main-content">
         <!-- Overview Tab -->
         <div id="overview-tab" class="tab-content active">
-            <div class="overview-grid">
+            <div class="overview-grid-three">
                 <div class="overview-section">
                     <h2>📸 Latest Upload</h2>
                     <div id="latest-image" class="latest-image">
@@ -467,6 +483,13 @@
                     <h2>📊 Median Image (Empty Mailbox)</h2>
                     <div id="median-image" class="latest-image">
                         <div class="loading">Loading median image...</div>
+                    </div>
+                </div>
+                
+                <div class="overview-section">
+                    <h2>🔍 Latest Comparison</h2>
+                    <div id="comparison-status" class="latest-image">
+                        <div class="loading">Loading comparison status...</div>
                     </div>
                 </div>
             </div>
@@ -520,6 +543,7 @@
             loadStatistics();
             loadLatestImage();
             loadMedianImage();
+            loadComparisonStatus();
             loadImagesForAllTabs();
         });
 
@@ -756,6 +780,71 @@
                 medianSection.innerHTML = `
                     <div class="empty-state">
                         <h3>Error loading median image</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function loadComparisonStatus() {
+            const comparisonSection = document.getElementById('comparison-status');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/comparison-status`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                if (data.success && data.latest_comparison) {
+                    const comparison = data.latest_comparison;
+                    const hasMail = comparison.has_mail;
+                    const differencePercent = comparison.difference_percentage;
+                    const timestamp = new Date(comparison.timestamp);
+                    
+                    // Create status indicator
+                    const statusIcon = hasMail ? '📬' : '📭';
+                    const statusText = hasMail ? 'Mail Detected' : 'No Mail';
+                    const statusColor = hasMail ? '#28a745' : '#6c757d';
+                    
+                    comparisonSection.innerHTML = `
+                        <div class="latest-info">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <span style="font-size: 1.5rem;">${statusIcon}</span>
+                                <span style="font-weight: 600; color: ${statusColor};">${statusText}</span>
+                            </div>
+                            <div style="margin-bottom: 0.5rem;">
+                                <strong>Difference:</strong> ${differencePercent}%
+                            </div>
+                            <div style="margin-bottom: 0.5rem;">
+                                <strong>Threshold:</strong> 15%
+                            </div>
+                            <div style="margin-bottom: 0.5rem;">
+                                <strong>Time:</strong> ${formatDate(timestamp)}
+                            </div>
+                            <div style="margin-top: 1rem;">
+                                <a href="${CLOUDFRONT_URL}/status/latest-compare.json" 
+                                   target="_blank" 
+                                   style="color: #0073bb; text-decoration: none; font-size: 0.875rem;">
+                                    📄 View Raw JSON
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    comparisonSection.innerHTML = `
+                        <div class="empty-state">
+                            <h3>No comparison data</h3>
+                            <p>No comparison has been performed yet. This will happen automatically when a new image is uploaded.</p>
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('Error loading comparison status:', error);
+                comparisonSection.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Error loading comparison</h3>
                         <p>${error.message}</p>
                     </div>
                 `;
