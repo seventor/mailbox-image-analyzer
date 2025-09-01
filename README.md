@@ -7,10 +7,10 @@ A CDK-based infrastructure for analyzing images captured by a camera inside a ma
 This project creates AWS infrastructure for a mailbox image analyzer application with the following components:
 
 - **S3 Bucket**: Secure storage for mailbox images with organized folder structure
-- **Lambda Functions**: Serverless functions for image upload and processing
-- **API Gateway**: REST API for image uploads with custom domain
+- **Lambda Functions**: Serverless functions for image upload, processing, and thumbnail management
+- **API Gateway**: REST API for image uploads, listing, and statistics with custom domain
 - **CloudFront**: CDN for serving webapp and acting as S3 origin
-- **Web Application**: Simple web interface for viewing images
+- **Web Application**: Modern tabbed interface for viewing and browsing mailbox images
 
 ## How It Works
 
@@ -31,6 +31,11 @@ This project creates AWS infrastructure for a mailbox image analyzer application
 - **POST /upload**: Accepts image uploads (Content-Type: image/jpeg)
   - Saves uploaded file as `uploads/latest.jpg` regardless of original filename
   - Returns success/error message with CORS headers
+- **GET /list-images**: Lists images from specified folders with metadata
+  - Query parameter: `folder` (usortert, ai-training-data/with-mail, ai-training-data/without-mail, uploads)
+  - Returns image list with thumbnails, dates, and file information
+- **GET /stats**: Provides image counts for each folder
+  - Returns statistics for all monitored folders
 
 ### File Structure
 
@@ -40,8 +45,11 @@ S3 Bucket: mailbox-image-analyzer-dev
 │   └── latest.jpg                    # Latest uploaded image
 ├── usortert/
 │   └── YYYY-MM-DD-HH-MM.jpg          # Timestamped copies
+├── ai-training-data/
+│   ├── with-mail/                     # Images classified as containing mail
+│   └── without-mail/                  # Images classified as not containing mail
 ├── thumbnails/
-│   └── YYYY-MM-DD-HH-MM-thumbnail.jpg # 128px wide thumbnails
+│   └── YYYY-MM-DD-HH-MM-thumbnail.jpg # 256px wide thumbnails
 └── index.html                         # Web application
 ```
 
@@ -66,8 +74,30 @@ S3 Bucket: mailbox-image-analyzer-dev
    - Triggered by S3 events when `uploads/latest.jpg` is updated
    - Only processes during specific time windows (minutes 55-59 or 00-04)
    - Copies images to `usortert` folder with timestamped filenames
-   - Creates thumbnails (128px wide) in `thumbnails` folder
-   - Uses Pillow library for image processing
+   - Creates thumbnails (256px wide) in `thumbnails` folder
+   - Uses shared Pillow library layer for image processing
+
+3. **Thumbnail Sync Function** (`thumbnail_sync.py`):
+   - Runs daily at 00:30 CET via EventBridge
+   - Ensures all images in monitored folders have corresponding thumbnails
+   - Creates missing thumbnails and removes orphaned ones
+   - Maintains thumbnail consistency across all folders
+
+4. **List Images Function** (`list_images.py`):
+   - Provides API endpoint for listing images from specific folders
+   - Returns image metadata including thumbnails, dates, and file information
+   - Supports all monitored folders (usortert, with-mail, without-mail, uploads)
+
+5. **Get Stats Function** (`get_stats.py`):
+   - Provides API endpoint for folder statistics
+   - Returns image counts for all monitored folders
+   - Used by webapp for displaying tab labels with counts
+
+### Lambda Layers
+
+- **Pillow Layer**: Contains Pillow library for image processing
+- **Common Utils Layer**: Contains shared utilities like `thumbnail_utils.py`
+- **Shared Dependencies**: Ensures consistent code across Lambda functions
 
 ### API Gateway
 
@@ -82,6 +112,27 @@ S3 Bucket: mailbox-image-analyzer-dev
 - **Origin**: S3 bucket with Origin Access Control (OAC)
 - **Functions**: Root path (`/`) automatically serves `/index.html`
 - **Error Handling**: 403/404 errors redirect to `/index.html`
+
+## Web Application
+
+The web application provides a modern, tabbed interface for viewing and browsing mailbox images. It's served via CloudFront and includes:
+
+### Features
+- **Tabbed Interface**: Overview, Usortert, With Mail, and Without Mail sections
+- **Image Gallery**: Grid layout with thumbnails and metadata
+- **Date Formatting**: Norwegian date format (DD.MM.YYYY HH:MM)
+- **Responsive Design**: Works on mobile and desktop devices
+- **Real-time Statistics**: Live image counts for each folder
+- **Latest Upload Display**: Shows the most recent uploaded image
+
+**Note**: The webapp is designed for viewing and browsing images only. Image uploads are handled via the API endpoint, not through the web interface.
+
+### Local Development
+A local development server script is included for testing:
+```bash
+./start-local-server.sh
+```
+This starts a local server at `http://localhost:8000/index.html` for development and testing.
 
 ## Prerequisites
 
@@ -175,12 +226,17 @@ aws s3 ls s3://mailbox-image-analyzer-dev/thumbnails/
 ├── lambda/                       # Lambda functions
 │   ├── upload_handler.py         # Image upload handler
 │   ├── image_processor.py        # Image processing handler
-│   └── pillow-layer/             # Pillow library layer
+│   ├── thumbnail_sync.py         # Daily thumbnail synchronization
+│   ├── list_images.py            # API for listing images
+│   ├── get_stats.py              # API for folder statistics
+│   └── common-layer/             # Shared utilities layer
 │       └── python/
+│           └── thumbnail_utils.py # Thumbnail creation utilities
 ├── webapp/                       # Web application files
 │   └── index.html                # Main webapp page
 ├── test-data/                    # Test images
 │   └── with-mail/
+├── start-local-server.sh         # Local development server script
 ├── package.json                  # Root project configuration
 ├── README.md                     # This file
 └── instructions.md               # Project requirements
