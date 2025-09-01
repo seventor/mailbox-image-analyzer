@@ -9,6 +9,11 @@ yarn-error.log*
 cdk.out
 cdk/cdk.out
 
+# Lambda layers (external dependencies)
+lambda/*-layer/
+lambda/pillow-layer/
+lambda/numpy-layer/
+
 # TypeScript
 *.tsbuildinfo
 
