@@ -15,7 +15,7 @@ def handler(event, context):
         folder = query_params.get('folder', 'usortert')
         
         # Validate folder parameter
-        allowed_folders = ['usortert', 'ai-training-data/with-mail', 'ai-training-data/without-mail']
+        allowed_folders = ['usortert', 'ai-training-data/with-mail', 'ai-training-data/without-mail', 'uploads']
         if folder not in allowed_folders:
             return {
                 'statusCode': 400,
@@ -43,16 +43,29 @@ def handler(event, context):
                     # Extract filename without folder path
                     filename = key.split('/')[-1]
                     base_name = filename.replace('.jpg', '')
-                    thumbnail_key = f'thumbnails/{base_name}-thumbnail.jpg'
+                    
+                    # Check if thumbnail actually exists
+                    thumbnail_key = None
+                    try:
+                        s3_client.head_object(Bucket=bucket_name, Key=f'thumbnails/{base_name}-thumbnail.jpg')
+                        thumbnail_key = f'thumbnails/{base_name}-thumbnail.jpg'
+                    except:
+                        # No thumbnail exists, set to None
+                        thumbnail_key = None
                     
                     # Extract date from filename (YYYY-MM-DD-HH-MM format)
                     date_obj = extract_date_from_filename(base_name)
+                    
+                    # If filename parsing fails, use S3 LastModified as fallback
+                    fallback_date = obj.get('LastModified')
+                    if fallback_date:
+                        fallback_date = fallback_date.replace(tzinfo=timezone.utc)
                     
                     images.append({
                         'original': key,
                         'thumbnail': thumbnail_key,
                         'name': base_name,
-                        'date': date_obj.isoformat() if date_obj else None,
+                        'date': date_obj.isoformat() if date_obj else (fallback_date.isoformat() if fallback_date else None),
                         'size': obj.get('Size', 0),
                         'lastModified': obj.get('LastModified', '').isoformat() if obj.get('LastModified') else None
                     })

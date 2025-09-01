@@ -12,27 +12,27 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: #f2f3f3;
             min-height: 100vh;
-            color: #333;
+            color: #16191f;
+            line-height: 1.5;
         }
 
         .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
+            background: #232f3e;
             padding: 1rem 2rem;
-            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            border-bottom: 1px solid #3c4043;
             position: sticky;
             top: 0;
             z-index: 100;
         }
 
         .header h1 {
-            color: #4a5568;
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
+            color: #ffffff;
+            font-size: 1.25rem;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
         }
 
         .stats {
@@ -42,13 +42,14 @@
         }
 
         .stat-item {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
+            background: #ffffff;
+            color: #16191f;
+            padding: 0.75rem 1rem;
+            border-radius: 4px;
             font-size: 0.875rem;
-            font-weight: 500;
-            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+            font-weight: 400;
+            border: 1px solid #d5dbdb;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.05);
         }
 
         .folder-tabs {
@@ -58,99 +59,149 @@
         }
 
         .tab {
-            background: rgba(255, 255, 255, 0.8);
-            border: 2px solid transparent;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
+            background: #ffffff;
+            border: 1px solid #d5dbdb;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
             cursor: pointer;
-            font-weight: 500;
-            transition: all 0.2s ease;
+            font-weight: 400;
+            transition: all 0.15s ease;
             font-size: 0.875rem;
+            color: #16191f;
         }
 
         .tab:hover {
-            background: rgba(255, 255, 255, 0.95);
-            transform: translateY(-1px);
+            background: #fafafa;
+            border-color: #879596;
         }
 
         .tab.active {
-            background: white;
-            border-color: #667eea;
-            color: #667eea;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+            background: #ec7211;
+            border-color: #ec7211;
+            color: #ffffff;
         }
 
         .main-content {
-            padding: 2rem;
+            padding: 1.5rem;
             max-width: 1400px;
             margin: 0 auto;
+            background: #f2f3f3;
         }
 
         .gallery {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 0.5rem;
             margin-top: 1rem;
         }
 
         .image-card {
-            background: white;
-            border-radius: 12px;
+            background: #ffffff;
+            border-radius: 4px;
             overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
+            border: 1px solid #d5dbdb;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+            transition: all 0.15s ease;
             cursor: pointer;
         }
 
         .image-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            border-color: #879596;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .image-card img {
             width: 100%;
-            height: 150px;
+            height: 80px;
             object-fit: cover;
             display: block;
         }
 
         .image-info {
-            padding: 0.75rem;
+            padding: 0.4rem;
         }
 
         .image-name {
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: #4a5568;
+            font-size: 0.625rem;
+            font-weight: 400;
+            color: #5f6b7a;
             margin-bottom: 0.25rem;
             word-break: break-all;
         }
 
         .image-date {
             font-size: 0.75rem;
-            color: #718096;
+            font-weight: 500;
+            color: #16191f;
+        }
+
+        .latest-section {
+            background: #ffffff;
+            border: 1px solid #d5dbdb;
+            border-radius: 4px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+        }
+
+        .latest-section h2 {
+            color: #16191f;
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+        }
+
+        .latest-image {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .latest-thumbnail {
+            width: 120px;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid #d5dbdb;
+        }
+
+        .latest-info {
+            flex: 1;
+        }
+
+        .latest-filename {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #16191f;
+            margin-bottom: 0.25rem;
+        }
+
+        .latest-datetime {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #16191f;
         }
 
         .loading {
             text-align: center;
             padding: 2rem;
-            color: white;
-            font-size: 1.1rem;
+            color: #16191f;
+            font-size: 1rem;
         }
 
         .error {
-            background: #fed7d7;
-            color: #c53030;
+            background: #fdf2f2;
+            color: #d63384;
             padding: 1rem;
-            border-radius: 8px;
+            border-radius: 4px;
             margin: 1rem 0;
-            border-left: 4px solid #c53030;
+            border: 1px solid #f5c6cb;
         }
 
         .empty-state {
             text-align: center;
             padding: 3rem;
-            color: white;
+            color: #16191f;
         }
 
         .empty-state h3 {
@@ -187,8 +238,8 @@
             }
             
             .gallery {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-                gap: 0.75rem;
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 0.4rem;
             }
         }
     </style>
@@ -215,6 +266,13 @@
     </div>
 
     <div class="main-content">
+        <div class="latest-section">
+            <h2>📸 Latest Upload</h2>
+            <div id="latest-image" class="latest-image">
+                <div class="loading">Loading latest image...</div>
+            </div>
+        </div>
+        
         <div id="gallery" class="gallery">
             <div class="loading">Loading images...</div>
         </div>
@@ -232,6 +290,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             setupEventListeners();
             loadStatistics();
+            loadLatestImage();
             loadImages(currentFolder);
         });
 
@@ -307,11 +366,56 @@
                          alt="${image.name}"
                          onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDIwMCAxNTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTUwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iNzUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk0QTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+VGh1bWJuYWlsIG5vdCBmb3VuZDwvdGV4dD4KPC9zdmc+'">
                     <div class="image-info">
-                        <div class="image-name">${image.name}</div>
                         <div class="image-date">${formatDate(new Date(image.date))}</div>
+                        <div class="image-name">${image.name}.jpg</div>
                     </div>
                 </div>
             `).join('');
+        }
+
+        async function loadLatestImage() {
+            const latestSection = document.getElementById('latest-image');
+            
+            try {
+                // Try to get the latest image from uploads folder
+                const response = await fetch(`${API_BASE_URL}/list-images?folder=uploads`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                if (data.images && data.images.length > 0) {
+                    const latest = data.images[0]; // First image (most recent)
+                    
+                    // Check if thumbnail exists, otherwise use original image
+                    const imageSrc = latest.thumbnail ? 
+                        `${CLOUDFRONT_URL}/${latest.thumbnail}` : 
+                        `${CLOUDFRONT_URL}/${latest.original}`;
+                    
+                    latestSection.innerHTML = `
+                        <img src="${imageSrc}" 
+                             alt="Latest upload" 
+                             class="latest-thumbnail"
+                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDIwMCAxNTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTUwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iNzUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIjk0QTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+VGh1bWJuYWlsIG5vdCBmb3VuZDwvdGV4dD4KPC9zdmc+'>
+                        <div class="latest-info">
+                            <div class="latest-filename">${latest.name}.jpg</div>
+                            <div class="latest-datetime">${latest.date ? formatDate(new Date(latest.date)) : 'Date not available'}</div>
+                        </div>
+                    `;
+                } else {
+                    latestSection.innerHTML = `
+                        <div class="empty-state">
+                            <p>No latest upload found</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                latestSection.innerHTML = `
+                    <div class="error">
+                        Error loading latest image: ${error.message}
+                    </div>
+                `;
+            }
         }
 
         function formatDate(date) {
