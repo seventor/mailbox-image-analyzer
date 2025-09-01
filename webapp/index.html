@@ -445,6 +445,13 @@
                     <div class="loading">Loading latest image...</div>
                 </div>
             </div>
+            
+            <div class="overview-section">
+                <h2>📊 Median Image (Empty Mailbox)</h2>
+                <div id="median-image" class="latest-image">
+                    <div class="loading">Loading median image...</div>
+                </div>
+            </div>
         </div>
         
         <!-- Usortert Tab -->
@@ -494,6 +501,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadStatistics();
             loadLatestImage();
+            loadMedianImage();
             loadImagesForAllTabs();
         });
 
@@ -684,6 +692,52 @@
                 latestSection.innerHTML = `
                     <div class="empty-state">
                         <h3>Error loading latest image</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function loadMedianImage() {
+            const medianSection = document.getElementById('median-image');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/list-images?folder=median-image`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                if (data.images && data.images.length > 0) {
+                    const median = data.images[0]; // First image (most recent)
+                    
+                    // Use the original image directly since median images don't have thumbnails
+                    const imageSrc = `${CLOUDFRONT_URL}/${median.original}`;
+                    
+                    medianSection.innerHTML = `
+                        <img src="${imageSrc}" 
+                             alt="Median image (empty mailbox)" 
+                             class="latest-thumbnail"
+                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDIwMCAxNTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTUwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iNzUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk0QTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+VGh1bWJuYWlsIG5vdCBmb3VuZDwvdGV4dD4KPC9zdmc+'>
+                        <div class="latest-info">
+                            <div class="latest-filename">${median.name}.jpg</div>
+                            <div class="latest-datetime">${median.date ? formatDate(new Date(median.date)) : 'Date not available'}</div>
+                        </div>
+                    `;
+                } else {
+                    medianSection.innerHTML = `
+                        <div class="empty-state">
+                            <h3>No median image</h3>
+                            <p>No median image has been created yet. It will be generated automatically at 00:15 CET daily.</p>
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('Error loading median image:', error);
+                medianSection.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Error loading median image</h3>
                         <p>${error.message}</p>
                     </div>
                 `;

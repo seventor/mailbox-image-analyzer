@@ -1,0 +1,2 @@
+# This file ensures the median-image folder exists in S3
+# The median image creation Lambda function will create median.jpg in this folder

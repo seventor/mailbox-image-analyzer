@@ -48,6 +48,8 @@ S3 Bucket: mailbox-image-analyzer-dev
 ├── ai-training-data/
 │   ├── with-mail/                     # Images classified as containing mail
 │   └── without-mail/                  # Images classified as not containing mail
+├── median-image/
+│   └── median.jpg                     # Median image representing empty mailbox
 ├── thumbnails/
 │   └── YYYY-MM-DD-HH-MM-thumbnail.jpg # 256px wide thumbnails
 └── index.html                         # Web application
@@ -93,10 +95,25 @@ S3 Bucket: mailbox-image-analyzer-dev
    - Returns image counts for all monitored folders
    - Used by webapp for displaying tab labels with counts
 
+6. **Move Images Function** (`move_images.py`):
+   - Provides API endpoint for moving images between folders
+   - Supports moving images from any folder to any other folder
+   - Handles bulk operations for multiple images
+   - Used by webapp for image organization
+
+7. **Create Median Image Function** (`create_median_image.py`):
+   - Runs daily at 00:15 CET via EventBridge
+   - Creates a median image from the latest 7 images in `ai-training-data/without-mail`
+   - Represents an average of how the mailbox looks without mail
+   - Saves the result as `median-image/median.jpg`
+   - Uses NumPy for image processing and statistical calculations
+   - Requires at least 3 images to create a meaningful median
+
 ### Lambda Layers
 
 - **Pillow Layer**: Contains Pillow library for image processing
 - **Common Utils Layer**: Contains shared utilities like `thumbnail_utils.py`
+- **NumPy Layer**: Contains NumPy library for numerical computations and median image creation
 - **Shared Dependencies**: Ensures consistent code across Lambda functions
 
 ### API Gateway
@@ -229,9 +246,13 @@ aws s3 ls s3://mailbox-image-analyzer-dev/thumbnails/
 │   ├── thumbnail_sync.py         # Daily thumbnail synchronization
 │   ├── list_images.py            # API for listing images
 │   ├── get_stats.py              # API for folder statistics
-│   └── common-layer/             # Shared utilities layer
-│       └── python/
-│           └── thumbnail_utils.py # Thumbnail creation utilities
+│   ├── move_images.py            # API for moving images between folders
+│   ├── create_median_image.py    # Daily median image creation
+│   ├── common-layer/             # Shared utilities layer
+│   │   └── python/
+│   │       └── thumbnail_utils.py # Thumbnail creation utilities
+│   ├── pillow-layer/             # Pillow library layer
+│   └── numpy-layer/              # NumPy library layer
 ├── webapp/                       # Web application files
 │   └── index.html                # Main webapp page
 ├── test-data/                    # Test images

@@ -187,6 +187,13 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       description: 'Common utilities (thumbnail_utils) for image functions',
     });
 
+    // Create numpy layer for median image creation
+    const numpyLayer = new lambda.LayerVersion(this, 'NumpyLayer', {
+      code: lambda.Code.fromAsset('../lambda/numpy-layer'),
+      compatibleRuntimes: [lambda.Runtime.PYTHON_3_11],
+      description: 'NumPy library for numerical computations',
+    });
+
     // Create Lambda function for image processing
     const imageProcessorFunction = new lambda.Function(this, 'ImageProcessorFunction', {
       runtime: lambda.Runtime.PYTHON_3_11,
@@ -326,6 +333,37 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
 
     // Grant S3 read/write permissions to move images function
     this.imageBucket.grantReadWrite(moveImagesFunction);
+
+    // Create Lambda function for median image creation
+    const createMedianImageFunction = new lambda.Function(this, 'CreateMedianImageFunction', {
+      runtime: lambda.Runtime.PYTHON_3_11,
+      handler: 'create_median_image.handler',
+      code: lambda.Code.fromAsset('../lambda'),
+      timeout: cdk.Duration.minutes(10),
+      memorySize: 1024,
+      layers: [pillowLayer, numpyLayer],
+      environment: {
+        BUCKET_NAME: this.imageBucket.bucketName,
+      },
+    });
+
+    // Grant S3 read/write permissions to median image creation function
+    this.imageBucket.grantReadWrite(createMedianImageFunction);
+
+    // Create EventBridge rule to trigger median image creation daily at 00:15 CET (23:15 UTC)
+    const createMedianImageRule = new events.Rule(this, 'CreateMedianImageRule', {
+      schedule: events.Schedule.cron({
+        minute: '15',
+        hour: '23',
+        day: '*',
+        month: '*',
+        year: '*',
+      }),
+      description: 'Trigger median image creation daily at 00:15 CET',
+    });
+
+    // Add Lambda as target for the EventBridge rule
+    createMedianImageRule.addTarget(new eventTargets.LambdaFunction(createMedianImageFunction));
 
     // Create API Gateway integrations
     const listImagesIntegration = new apigateway.LambdaIntegration(listImagesFunction);
