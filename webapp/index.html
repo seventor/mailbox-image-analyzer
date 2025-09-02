@@ -545,6 +545,17 @@
             loadMedianImage();
             loadComparisonStatus();
             loadImagesForAllTabs();
+            
+            // Set up automatic refresh every 5 minutes (300,000 milliseconds)
+            setInterval(function() {
+                // Only refresh if we're on the Overview tab
+                const overviewTab = document.getElementById('overview-tab');
+                if (overviewTab && overviewTab.classList.contains('active')) {
+                    console.log('Auto-refreshing Overview data...');
+                    loadLatestImage();
+                    loadComparisonStatus();
+                }
+            }, 5 * 60 * 1000); // 5 minutes
         });
 
         function showTab(tabName, event) {
