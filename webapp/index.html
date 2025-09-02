@@ -604,9 +604,17 @@
     </div>
 
     <script>
-        const API_BASE_URL = 'https://api.mailbox-dev.g103.net';
-        const CLOUDFRONT_URL = 'https://mailbox-dev.g103.net';
-        const BUCKET_NAME = 'mailbox-image-analyzer-dev';
+        // Environment-specific configuration
+        const ENVIRONMENT = window.location.hostname.includes('dev') ? 'dev' : 'prod';
+        const API_BASE_URL = ENVIRONMENT === 'dev' 
+            ? 'https://api.mailbox-dev.g103.net'
+            : 'https://api.mailbox.g103.net';
+        const CLOUDFRONT_URL = ENVIRONMENT === 'dev'
+            ? 'https://mailbox-dev.g103.net'
+            : 'https://mailbox.g103.net';
+        const BUCKET_NAME = ENVIRONMENT === 'dev'
+            ? 'mailbox-image-analyzer-dev'
+            : 'mailbox-image-analyzer-prod';
         const REGION = 'us-east-1';
         let imageCache = {};
         let selectedImages = new Set();
