@@ -483,6 +483,71 @@
                 grid-template-columns: repeat(3, 1fr);
             }
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #ffffff;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e1e5e9;
+            background-color: #f9fafb;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .close {
+            color: #6b7280;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close:hover {
+            color: #374151;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 16px 20px;
+            border-top: 1px solid #e1e5e9;
+            background-color: #f9fafb;
+        }
     </style>
 </head>
 <body>
@@ -604,9 +669,30 @@
         </div>
     </div>
 
+    <!-- Edit Statistics Modal -->
+    <div id="editModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Edit Statistics</h3>
+                <span class="close" onclick="closeEditModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 10px;">
+                    <label for="jsonEditor" style="font-weight: 600; font-size: 12px;">Statistics JSON:</label>
+                </div>
+                <textarea id="jsonEditor" style="width: 100%; height: 400px; font-family: 'Courier New', monospace; font-size: 11px; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; resize: vertical;"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button onclick="saveStatistics()" style="background: #059669; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 12px;">Save</button>
+                <button onclick="closeEditModal()" style="background: #6b7280; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 8px;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Environment-specific configuration
-        const ENVIRONMENT = window.location.hostname.includes('dev') ? 'dev' : 'prod';
+        const ENVIRONMENT = window.location.hostname.includes('localhost') ? 'dev' : 
+                           window.location.hostname.includes('dev') ? 'dev' : 'prod';
         const API_BASE_URL = ENVIRONMENT === 'dev' 
             ? 'https://api.mailbox-dev.g103.net'
             : 'https://api.mailbox.g103.net';
@@ -956,6 +1042,11 @@
                                            target="_blank" 
                                            style="color: #7749f8; text-decoration: none; font-size: 9px;">
                                             📄 ${model} JSON
+                                        </a>
+                                        <a href="#" 
+                                           onclick="editStatistics('${model}')" 
+                                           style="color: #059669; text-decoration: none; font-size: 9px; margin-left: 8px;">
+                                            ✏️ Edit Statistics
                                         </a>
                                     </div>
                                 </div>
@@ -1383,6 +1474,110 @@
             // Show notification
             const count = imageCards.length;
             showNotification(`${count} image${count > 1 ? 's' : ''} selected`, 'info');
+        }
+
+        // Modal functions for editing statistics
+        let currentEditingModel = null;
+
+        async function editStatistics(modelName) {
+            currentEditingModel = modelName;
+            
+            try {
+                // Fetch the statistics JSON
+                const response = await fetch(`${API_BASE_URL}/edit-statistics?model=${modelName.toLowerCase()}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Update modal title
+                document.getElementById('modalTitle').textContent = `Edit ${modelName} Statistics`;
+                
+                // Set the JSON content in the textarea
+                document.getElementById('jsonEditor').value = JSON.stringify(data, null, 2);
+                
+                // Show the modal
+                document.getElementById('editModal').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+                showNotification(`Error loading ${modelName} statistics: ${error.message}`, 'error');
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+            currentEditingModel = null;
+        }
+
+        async function saveStatistics() {
+            if (!currentEditingModel) {
+                return;
+            }
+            
+            try {
+                // Get the JSON content from the textarea
+                const jsonContent = document.getElementById('jsonEditor').value;
+                
+                // Validate JSON
+                let parsedData;
+                try {
+                    parsedData = JSON.parse(jsonContent);
+                    
+                    // Handle both array format and object format with comparisons array
+                    if (Array.isArray(parsedData)) {
+                        // Direct array format - valid
+                    } else if (parsedData && typeof parsedData === 'object' && Array.isArray(parsedData.comparisons)) {
+                        // Object format with comparisons array - valid
+                    } else {
+                        throw new Error('Data must be a JSON array or object with comparisons array');
+                    }
+                } catch (parseError) {
+                    showNotification(`Invalid JSON format: ${parseError.message}`, 'error');
+                    return;
+                }
+                
+                // Save the statistics
+                const response = await fetch(`${API_BASE_URL}/edit-statistics?model=${currentEditingModel.toLowerCase()}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: jsonContent
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                // Store the model name before closing the modal
+                const savedModelName = currentEditingModel;
+                
+                // Close the modal
+                closeEditModal();
+                
+                // Show success message
+                showNotification(`${savedModelName} statistics saved successfully!`, 'success');
+                
+                // Reload comparison status to show updated data
+                await loadAllComparisonStatus();
+                
+            } catch (error) {
+                console.error('Error saving statistics:', error);
+                showNotification(`Error saving ${currentEditingModel} statistics: ${error.message}`, 'error');
+            }
+        }
+
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            const modal = document.getElementById('editModal');
+            if (event.target === modal) {
+                closeEditModal();
+            }
         }
     </script>
 </body>

@@ -402,11 +402,27 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
     // Add comparison function name to image processor environment
     imageProcessorFunction.addEnvironment('COMPARISON_FUNCTION_NAME', compareLatestWithMedianFunction.functionName);
 
+    // Create Lambda function for editing statistics JSON
+    const editStatisticsFunction = new lambda.Function(this, 'EditStatisticsFunction', {
+      runtime: lambda.Runtime.PYTHON_3_11,
+      handler: 'edit_statistics.handler',
+      code: lambda.Code.fromAsset('../lambda'),
+      timeout: cdk.Duration.minutes(1),
+      memorySize: 256,
+      environment: {
+        BUCKET_NAME: this.imageBucket.bucketName,
+      },
+    });
+
+    // Grant S3 read/write permissions to edit statistics function
+    this.imageBucket.grantReadWrite(editStatisticsFunction);
+
     // Create API Gateway integrations
     const listImagesIntegration = new apigateway.LambdaIntegration(listImagesFunction);
     const getStatsIntegration = new apigateway.LambdaIntegration(getStatsFunction);
     const moveImagesIntegration = new apigateway.LambdaIntegration(moveImagesFunction);
     const getComparisonStatusIntegration = new apigateway.LambdaIntegration(getComparisonStatusFunction);
+    const editStatisticsIntegration = new apigateway.LambdaIntegration(editStatisticsFunction);
 
     // Add list images endpoint
     const listImagesResource = api.root.addResource('list-images');
@@ -423,6 +439,11 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
     // Add comparison status endpoint
     const comparisonStatusResource = api.root.addResource('comparison-status');
     comparisonStatusResource.addMethod('GET', getComparisonStatusIntegration);
+
+    // Add edit statistics endpoint
+    const editStatisticsResource = api.root.addResource('edit-statistics');
+    editStatisticsResource.addMethod('GET', editStatisticsIntegration);
+    editStatisticsResource.addMethod('POST', editStatisticsIntegration);
 
     // Output the bucket ARN
     new cdk.CfnOutput(this, 'ImageBucketArn', {
