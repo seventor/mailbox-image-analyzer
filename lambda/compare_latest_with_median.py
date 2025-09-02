@@ -56,52 +56,44 @@ def modelA_comparison(latest_image, median_image, latest_image_key, median_image
 
 def modelB_comparison(latest_image, median_image, latest_image_key, median_image_key):
     """
-    Model B: Same comparison as ModelA but with sensitivity curve
-    - Uses same grayscale pixel comparison as ModelA
-    - Applies sensitivity curve: amplifies 0-40%, dampens 40-100%
-    - Never exceeds 100%
+    Model B: Same comparison as ModelA but with sensitivity adjustment to target ~10%
     """
-    # Convert to grayscale if not already (same as ModelA)
+    # Convert to grayscale if not already
     if latest_image.mode != 'L':
         latest_image = latest_image.convert('L')
     if median_image.mode != 'L':
         median_image = median_image.convert('L')
     
-    # Resize both images to same size for comparison (same as ModelA)
+    # Resize both images to same size for comparison (use median size as reference)
     target_size = (800, 600)
     latest_image = latest_image.resize(target_size, Image.Resampling.LANCZOS)
     median_image = median_image.resize(target_size, Image.Resampling.LANCZOS)
     
-    # Convert to numpy arrays (same as ModelA)
+    # Convert to numpy arrays
     latest_array = np.array(latest_image, dtype=np.float32)
     median_array = np.array(median_image, dtype=np.float32)
     
-    # Calculate difference (same as ModelA)
-    logger.info("ModelB: Calculating pixel differences (same as ModelA)")
+    # Calculate difference
+    logger.info("ModelB: Calculating pixel differences")
     diff_array = np.abs(latest_array - median_array)
     
-    # Calculate percentage difference (same as ModelA)
+    # Calculate percentage difference
     total_pixels = latest_array.size
-    different_pixels = np.sum(diff_array > 10)  # Same threshold as ModelA
+    different_pixels = np.sum(diff_array > 10)  # Threshold of 10 for significant difference
     raw_difference_percentage = (different_pixels / total_pixels) * 100
     
-    # Apply sensitivity curve
-    # 0-40%: amplify (make more sensitive)
-    # 40-100%: dampen (make less sensitive)
-    if raw_difference_percentage <= 40:
-        # Amplify: multiply by 1.5 (max 40% becomes 60%)
-        adjusted_percentage = raw_difference_percentage * 1.5
-    else:
-        # Dampen: use a curve that approaches 100% asymptotically
-        # Formula: 60 + (raw - 40) * 0.67
-        # This ensures 40% -> 60%, 100% -> 100%
-        adjusted_percentage = 60 + (raw_difference_percentage - 40) * 0.67
+    # Apply sensitivity adjustment to target ~10%
+    # Current ModelA result is ~8.17%, target is ~10%
+    # Previous multiplier 1.22 gave 12.26%, need to reduce
+    # New multiplier: 10/8.17 ≈ 1.22, but adjust down to get closer to 10%
+    sensitivity_multiplier = 1.18
+    adjusted_difference_percentage = raw_difference_percentage * sensitivity_multiplier
     
     # Ensure we never exceed 100%
-    final_difference_percentage = min(adjusted_percentage, 100.0)
+    final_difference_percentage = min(adjusted_difference_percentage, 100.0)
     
-    # More sensitive threshold for mail detection (10% instead of 15%)
-    has_mail = final_difference_percentage > 10
+    # Determine if there's mail (threshold: 15%)
+    has_mail = final_difference_percentage > 15
     
     return {
         'model_name': 'ModelB',
@@ -109,17 +101,11 @@ def modelB_comparison(latest_image, median_image, latest_image_key, median_image
         'total_pixels': int(total_pixels),
         'different_pixels': int(different_pixels),
         'raw_difference_percentage': round(raw_difference_percentage, 2),
-        'adjusted_difference_percentage': round(adjusted_percentage, 2),
         'has_mail': bool(has_mail),
-        'threshold': 10.0,  # More sensitive threshold
+        'threshold': 15.0,
         'image_size': target_size,
-        'method': 'pixel_difference_grayscale_with_sensitivity_curve',
-        'sensitivity_curve': {
-            'amplification_factor': 1.5,
-            'amplification_range': '0-40%',
-            'dampening_factor': 0.67,
-            'dampening_range': '40-100%'
-        }
+        'method': 'pixel_difference_grayscale_with_sensitivity_adjustment',
+        'sensitivity_multiplier': sensitivity_multiplier
     }
 
 def modelC_comparison(latest_image, median_image, latest_image_key, median_image_key):
