@@ -56,7 +56,7 @@ def modelA_comparison(latest_image, median_image, latest_image_key, median_image
 
 def modelB_comparison(latest_image, median_image, latest_image_key, median_image_key):
     """
-    Model B: Same comparison as ModelA but with sensitivity adjustment to target ~10%
+    Model B: Same comparison as ModelA but with cubic sensitivity curve
     """
     # Convert to grayscale if not already
     if latest_image.mode != 'L':
@@ -82,30 +82,24 @@ def modelB_comparison(latest_image, median_image, latest_image_key, median_image
     different_pixels = np.sum(diff_array > 10)  # Threshold of 10 for significant difference
     raw_difference_percentage = (different_pixels / total_pixels) * 100
     
-    # Apply sensitivity adjustment to target ~10%
-    # Current ModelA result is ~8.17%, target is ~10%
-    # Previous multiplier 1.22 gave 12.26%, need to reduce
-    # New multiplier: 10/8.17 ≈ 1.22, but adjust down to get closer to 10%
-    sensitivity_multiplier = 1.18
-    adjusted_difference_percentage = raw_difference_percentage * sensitivity_multiplier
-    
-    # Ensure we never exceed 100%
-    final_difference_percentage = min(adjusted_difference_percentage, 100.0)
+    # Apply cubic sensitivity curve: result = raw³ / 10000
+    # This creates a curve that's very gentle at low values and extremely steep at high values
+    adjusted_difference_percentage = (raw_difference_percentage ** 3) / 10000
     
     # Determine if there's mail (threshold: 15%)
-    has_mail = final_difference_percentage > 15
+    has_mail = adjusted_difference_percentage > 15
     
     return {
         'model_name': 'ModelB',
-        'difference_percentage': round(final_difference_percentage, 2),
+        'difference_percentage': round(adjusted_difference_percentage, 2),
         'total_pixels': int(total_pixels),
         'different_pixels': int(different_pixels),
         'raw_difference_percentage': round(raw_difference_percentage, 2),
         'has_mail': bool(has_mail),
         'threshold': 15.0,
         'image_size': target_size,
-        'method': 'pixel_difference_grayscale_with_sensitivity_adjustment',
-        'sensitivity_multiplier': sensitivity_multiplier
+        'method': 'pixel_difference_grayscale_with_cubic_curve',
+        'sensitivity_formula': 'raw³ / 10000'
     }
 
 def modelC_comparison(latest_image, median_image, latest_image_key, median_image_key):

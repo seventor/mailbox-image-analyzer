@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Non-Linear Sensitivity Curve Visualization</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 20px 0;
+        }
+        .explanation {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            border-left: 4px solid #007bff;
+        }
+        .curve-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .curve-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+        .curve-card h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .formula {
+            font-family: 'Courier New', monospace;
+            background: #e9ecef;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .formula label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #333;
+            font-family: Arial, sans-serif;
+        }
+        
+        .formula input[type="range"] {
+            width: 200px;
+            margin-right: 10px;
+        }
+        
+        .formula #denominatorValue {
+            font-weight: bold;
+            color: #007bff;
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+        }
+        .example-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        .example-table th, .example-table td {
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            text-align: center;
+        }
+        .example-table th {
+            background-color: #e9ecef;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Non-Linear Sensitivity Curve Visualization</h1>
+        
+        <div class="explanation">
+            <h3>🎯 What You Want vs Current Implementation</h3>
+            <p>You want a <strong>non-linear curve</strong> that's steep at low percentages and flattens out as it approaches 100%:</p>
+            <ul>
+                <li><strong>Low percentages (5-20%)</strong>: Steep amplification (5% → 15%, 10% → 20%)</li>
+                <li><strong>High percentages (80-100%)</strong>: Flatter curve, both end at 100%</li>
+                <li><strong>Non-linear</strong>: Not a straight multiplier, but a curved function</li>
+            </ul>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="sensitivityChart"></canvas>
+        </div>
+
+        <div class="curve-comparison">
+            <div class="curve-card">
+                <h3>❌ Current ModelB (Linear)</h3>
+                <p>Simple 1.18x multiplier across the entire range</p>
+                <div class="formula">result = raw × 1.18</div>
+                <p><strong>Problem:</strong> Same amplification for all percentages</p>
+            </div>
+            
+            <div class="curve-card">
+                <h3>✅ Desired ModelB (Non-Linear)</h3>
+                <p>Steep curve at low percentages, flattens at high percentages</p>
+                                         <div class="formula">
+            <label for="denominatorSlider">Adjust curve steepness:</label>
+            <input type="range" id="denominatorSlider" min="50" max="300" value="150" step="10">
+            <span id="denominatorValue">150</span>
+            <br>
+            <div id="currentFormula">
+                result = raw × (raw / 150) × (raw / 100)<br>
+                Cubic curve: much steeper at high values, no capping
+            </div>
+        </div>
+                <p><strong>Benefit:</strong> More sensitive to small changes</p>
+            </div>
+        </div>
+
+        <div class="curve-card">
+            <h3>📋 Example Transformations</h3>
+            <table class="example-table">
+                <thead>
+                    <tr>
+                        <th>Raw %</th>
+                        <th>Current ModelB (1.18x)</th>
+                        <th>Desired ModelB (Non-Linear)</th>
+                        <th>Amplification Factor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                                         <tr>
+                         <td>5%</td>
+                         <td>5.9%</td>
+                         <td>3.2%</td>
+                         <td>0.64x</td>
+                     </tr>
+                     <tr>
+                         <td>10%</td>
+                         <td>11.8%</td>
+                         <td>6.7%</td>
+                         <td>0.67x</td>
+                     </tr>
+                     <tr>
+                         <td>20%</td>
+                         <td>23.6%</td>
+                         <td>14.7%</td>
+                         <td>0.74x</td>
+                     </tr>
+                     <tr>
+                         <td>50%</td>
+                         <td>59%</td>
+                         <td>41.7%</td>
+                         <td>0.83x</td>
+                     </tr>
+                     <tr>
+                         <td>80%</td>
+                         <td>94.4%</td>
+                         <td>77.3%</td>
+                         <td>0.97x</td>
+                     </tr>
+                     <tr>
+                         <td>100%</td>
+                         <td>100%</td>
+                         <td>100%</td>
+                         <td>1.0x</td>
+                     </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="explanation">
+            <h3>🔧 Implementation Options</h3>
+            <p>Here are some mathematical functions that could achieve this curve:</p>
+            <ul>
+                <li><strong>Exponential decay:</strong> <code>result = raw * (1 + e^(-raw/20))</code></li>
+                <li><strong>Power function:</strong> <code>result = raw * (1 + (100-raw)/100)^0.5</code></li>
+                <li><strong>Logarithmic:</strong> <code>result = raw * (1 + log(1 + raw/10))</code></li>
+                <li><strong>Custom piecewise:</strong> Different formulas for different ranges</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let chart;
+        let currentDenominator = 150;
+
+        // Function to calculate desired ModelB values
+        function calculateDesiredModelB(rawValue, denominator) {
+            // Use a steeper curve that's always increasing
+            // Formula: result = raw * (raw / denominator) * (raw / 100)
+            // This creates a cubic curve that's much steeper at high values
+            return rawValue * (rawValue / denominator) * (rawValue / 100);
+        }
+
+        // Function to update the chart
+        function updateChart() {
+            const rawValues = [];
+            const currentModelB = [];
+            const desiredModelB = [];
+            
+            for (let i = 0; i <= 100; i += 2) {
+                rawValues.push(i);
+                
+                // Current ModelB: Linear 1.18x multiplier
+                let current = i * 1.18;
+                current = Math.min(current, 100);
+                currentModelB.push(current);
+                
+                // Desired ModelB: Non-linear curve with current denominator
+                let desired = calculateDesiredModelB(i, currentDenominator);
+                desired = Math.min(desired, 100);
+                desiredModelB.push(desired);
+            }
+
+            // Update chart data
+            chart.data.datasets[1].data = currentModelB;
+            chart.data.datasets[2].data = desiredModelB;
+            chart.update();
+
+            // Update formula display
+            document.getElementById('currentFormula').innerHTML = 
+                `result = raw × (raw / ${currentDenominator}) × (raw / 100)<br>
+                Cubic curve: much steeper at high values, no capping`;
+
+            // Update example table
+            updateExampleTable();
+        }
+
+        // Function to update the example table
+        function updateExampleTable() {
+            const examples = [5, 10, 20, 50, 80, 100];
+            const tableBody = document.querySelector('.example-table tbody');
+            
+            let tableHTML = '';
+            examples.forEach(raw => {
+                const currentModelB = Math.min(raw * 1.18, 100);
+                const desiredModelB = Math.min(calculateDesiredModelB(raw, currentDenominator), 100);
+                const amplification = (desiredModelB / raw).toFixed(2);
+                
+                tableHTML += `
+                    <tr>
+                        <td>${raw}%</td>
+                        <td>${currentModelB.toFixed(1)}%</td>
+                        <td>${desiredModelB.toFixed(1)}%</td>
+                        <td>${amplification}x</td>
+                    </tr>
+                `;
+            });
+            
+            tableBody.innerHTML = tableHTML;
+        }
+
+        // Initialize the chart
+        function initChart() {
+            const rawValues = [];
+            const currentModelB = [];
+            const desiredModelB = [];
+            
+            for (let i = 0; i <= 100; i += 2) {
+                rawValues.push(i);
+                
+                // Current ModelB: Linear 1.18x multiplier
+                let current = i * 1.18;
+                current = Math.min(current, 100);
+                currentModelB.push(current);
+                
+                // Desired ModelB: Non-linear curve
+                let desired = calculateDesiredModelB(i, currentDenominator);
+                desired = Math.min(desired, 100);
+                desiredModelB.push(desired);
+            }
+
+            const ctx = document.getElementById('sensitivityChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: rawValues,
+                    datasets: [
+                        {
+                            label: 'ModelA (Raw)',
+                            data: rawValues,
+                            borderColor: '#007bff',
+                            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                            borderWidth: 3,
+                            fill: false,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Current ModelB (Linear 1.18x)',
+                            data: currentModelB,
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            borderWidth: 3,
+                            fill: false,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Desired ModelB (Non-Linear)',
+                            data: desiredModelB,
+                            borderColor: '#dc3545',
+                            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                            borderWidth: 4,
+                            fill: false,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Reference Line (y=x)',
+                            data: rawValues,
+                            borderColor: '#6c757d',
+                            backgroundColor: 'rgba(108, 117, 125, 0.1)',
+                            borderWidth: 1,
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Current vs Desired Sensitivity Curves',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        legend: {
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + '%';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Raw Difference Percentage (ModelA)'
+                            },
+                            min: 0,
+                            max: 100
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Adjusted Difference Percentage'
+                            },
+                            min: 0,
+                            max: 100
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
+                }
+            });
+        }
+
+        // Add slider event listener
+        document.addEventListener('DOMContentLoaded', function() {
+            const slider = document.getElementById('denominatorSlider');
+            const valueDisplay = document.getElementById('denominatorValue');
+            
+            slider.addEventListener('input', function() {
+                currentDenominator = parseInt(this.value);
+                valueDisplay.textContent = currentDenominator;
+                updateChart();
+            });
+            
+            // Initialize everything
+            initChart();
+            updateExampleTable();
+        });
+    </script>
+</body>
+</html>
