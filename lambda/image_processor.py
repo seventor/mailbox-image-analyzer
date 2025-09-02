@@ -15,6 +15,27 @@ def handler(event, context):
         now = datetime.now()
         current_minute = now.minute
         
+        # Get bucket name from environment variable
+        bucket_name = os.environ['BUCKET_NAME']
+        
+        # Get the current timestamp for filename
+        timestamp = now.strftime('%Y-%m-%d-%H-%M')
+        
+        # Invoke comparison function asynchronously (always run, regardless of time)
+        try:
+            lambda_client.invoke(
+                FunctionName=f'{os.environ.get("BUCKET_NAME", "mailbox-image-analyzer-dev")}-CompareLatestWithMedianFunction',
+                InvocationType='Event',  # Asynchronous invocation
+                Payload=json.dumps({
+                    'triggered_by': 'image_processor',
+                    'timestamp': timestamp
+                })
+            )
+            print("Comparison function invoked successfully")
+        except Exception as e:
+            print(f"Error invoking comparison function: {str(e)}")
+            # Don't fail the main function if comparison fails
+        
         # Check if current minute is between 55-59 or 00-04
         if not (current_minute >= 55 or current_minute <= 4):
             # Do nothing if not in the specified time window
@@ -23,15 +44,10 @@ def handler(event, context):
                 'body': json.dumps({
                     'message': 'Image processing skipped - not in processing window',
                     'current_minute': current_minute,
-                    'processing_window': 'minutes 55-59 or 00-04'
+                    'processing_window': 'minutes 55-59 or 00-04',
+                    'comparison_invoked': True
                 })
             }
-        
-        # Get bucket name from environment variable
-        bucket_name = os.environ['BUCKET_NAME']
-        
-        # Get the current timestamp for filename
-        timestamp = now.strftime('%Y-%m-%d-%H-%M')
         
         # Download the latest.jpg file from S3
         response = s3_client.get_object(
@@ -58,21 +74,6 @@ def handler(event, context):
                 'statusCode': 500,
                 'body': json.dumps({'error': f'Failed to create thumbnail: {thumbnail_result["error"]}'})
             }
-        
-        # Invoke comparison function asynchronously
-        try:
-            lambda_client.invoke(
-                FunctionName=f'{os.environ.get("BUCKET_NAME", "mailbox-image-analyzer-dev")}-CompareLatestWithMedianFunction',
-                InvocationType='Event',  # Asynchronous invocation
-                Payload=json.dumps({
-                    'triggered_by': 'image_processor',
-                    'timestamp': timestamp
-                })
-            )
-            print("Comparison function invoked successfully")
-        except Exception as e:
-            print(f"Error invoking comparison function: {str(e)}")
-            # Don't fail the main function if comparison fails
         
         return {
             'statusCode': 200,
