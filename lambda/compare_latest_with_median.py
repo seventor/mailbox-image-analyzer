@@ -54,12 +54,119 @@ def modelA_comparison(latest_image, median_image, latest_image_key, median_image
         'method': 'pixel_difference_grayscale'
     }
 
+def modelB_comparison(latest_image, median_image, latest_image_key, median_image_key):
+    """
+    Model B: Enhanced sensitivity comparison with multiple analysis techniques
+    - Lower threshold for pixel differences (5 instead of 10)
+    - Edge detection to focus on structural changes
+    - Color channel analysis for RGB images
+    - Multiple threshold levels for different sensitivity levels
+    """
+    # Convert to RGB if not already (for color analysis)
+    if latest_image.mode != 'RGB':
+        latest_image = latest_image.convert('RGB')
+    if median_image.mode != 'RGB':
+        median_image = median_image.convert('RGB')
+    
+    # Resize both images to same size for comparison
+    target_size = (800, 600)
+    latest_image = latest_image.resize(target_size, Image.Resampling.LANCZOS)
+    median_image = median_image.resize(target_size, Image.Resampling.LANCZOS)
+    
+    # Convert to numpy arrays
+    latest_array = np.array(latest_image, dtype=np.float32)
+    median_array = np.array(median_image, dtype=np.float32)
+    
+    # 1. Enhanced pixel difference analysis (more sensitive threshold)
+    logger.info("ModelB: Calculating enhanced pixel differences")
+    diff_array = np.abs(latest_array - median_array)
+    
+    # Use lower threshold for more sensitivity (5 instead of 10)
+    sensitive_threshold = 5
+    very_sensitive_threshold = 2
+    
+    # Calculate differences at multiple sensitivity levels
+    different_pixels_sensitive = np.sum(diff_array > sensitive_threshold)
+    different_pixels_very_sensitive = np.sum(diff_array > very_sensitive_threshold)
+    
+    # 2. Edge detection analysis (focus on structural changes)
+    from PIL import ImageFilter
+    
+    # Apply edge detection to both images
+    latest_edges = latest_image.filter(ImageFilter.FIND_EDGES)
+    median_edges = median_image.filter(ImageFilter.FIND_EDGES)
+    
+    # Convert edge images to arrays
+    latest_edges_array = np.array(latest_edges.convert('L'), dtype=np.float32)
+    median_edges_array = np.array(median_edges.convert('L'), dtype=np.float32)
+    
+    # Calculate edge differences
+    edge_diff_array = np.abs(latest_edges_array - median_edges_array)
+    edge_different_pixels = np.sum(edge_diff_array > 10)  # Edge threshold
+    
+    # 3. Color channel analysis
+    # Calculate differences per color channel
+    red_diff = np.sum(diff_array[:, :, 0] > sensitive_threshold)
+    green_diff = np.sum(diff_array[:, :, 1] > sensitive_threshold)
+    blue_diff = np.sum(diff_array[:, :, 2] > sensitive_threshold)
+    
+    # 4. Combined analysis with weighted scoring
+    total_pixels = latest_array.size // 3  # RGB has 3 channels
+    
+    # Weighted difference calculation
+    pixel_weight = 0.6  # 60% weight for pixel differences
+    edge_weight = 0.3   # 30% weight for edge differences
+    color_weight = 0.1  # 10% weight for color channel analysis
+    
+    # Normalize differences
+    pixel_diff_percent = (different_pixels_sensitive / total_pixels) * 100
+    edge_diff_percent = (edge_different_pixels / total_pixels) * 100
+    color_diff_percent = ((red_diff + green_diff + blue_diff) / (total_pixels * 3)) * 100
+    
+    # Calculate weighted difference percentage
+    weighted_difference_percentage = (
+        (pixel_diff_percent * pixel_weight) +
+        (edge_diff_percent * edge_weight) +
+        (color_diff_percent * color_weight)
+    )
+    
+    # More sensitive threshold for mail detection (10% instead of 15%)
+    has_mail = weighted_difference_percentage > 10
+    
+    return {
+        'model_name': 'ModelB',
+        'difference_percentage': round(weighted_difference_percentage, 2),
+        'total_pixels': int(total_pixels),
+        'different_pixels_sensitive': int(different_pixels_sensitive),
+        'different_pixels_very_sensitive': int(different_pixels_very_sensitive),
+        'edge_different_pixels': int(edge_different_pixels),
+        'red_different_pixels': int(red_diff),
+        'green_different_pixels': int(green_diff),
+        'blue_different_pixels': int(blue_diff),
+        'has_mail': bool(has_mail),
+        'threshold': 10.0,  # More sensitive threshold
+        'image_size': target_size,
+        'method': 'enhanced_sensitivity_multi_analysis',
+        'analysis_breakdown': {
+            'pixel_diff_percent': round(pixel_diff_percent, 2),
+            'edge_diff_percent': round(edge_diff_percent, 2),
+            'color_diff_percent': round(color_diff_percent, 2),
+            'weights': {
+                'pixel': pixel_weight,
+                'edge': edge_weight,
+                'color': color_weight
+            }
+        }
+    }
+
 def run_comparison_model(model_name, latest_image, median_image, latest_image_key, median_image_key):
     """
     Run comparison using the specified model
     """
     if model_name == 'ModelA':
         return modelA_comparison(latest_image, median_image, latest_image_key, median_image_key)
+    elif model_name == 'ModelB':
+        return modelB_comparison(latest_image, median_image, latest_image_key, median_image_key)
     else:
         raise ValueError(f"Unknown model: {model_name}")
 
