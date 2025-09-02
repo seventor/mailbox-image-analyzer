@@ -399,6 +399,9 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
     // Grant permission for image processor to invoke comparison function
     compareLatestWithMedianFunction.grantInvoke(imageProcessorFunction);
 
+    // Add comparison function name to image processor environment
+    imageProcessorFunction.addEnvironment('COMPARISON_FUNCTION_NAME', compareLatestWithMedianFunction.functionName);
+
     // Create API Gateway integrations
     const listImagesIntegration = new apigateway.LambdaIntegration(listImagesFunction);
     const getStatsIntegration = new apigateway.LambdaIntegration(getStatsFunction);

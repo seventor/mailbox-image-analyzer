@@ -24,7 +24,7 @@ def handler(event, context):
         # Invoke comparison function asynchronously (always run, regardless of time)
         try:
             lambda_client.invoke(
-                FunctionName=f'{os.environ.get("BUCKET_NAME", "mailbox-image-analyzer-dev")}-CompareLatestWithMedianFunction',
+                FunctionName=os.environ.get('COMPARISON_FUNCTION_NAME'),
                 InvocationType='Event',  # Asynchronous invocation
                 Payload=json.dumps({
                     'triggered_by': 'image_processor',
