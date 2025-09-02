@@ -21,21 +21,23 @@ def handler(event, context):
         # Get the current timestamp for filename
         timestamp = now.strftime('%Y-%m-%d-%H-%M')
         
-        # Invoke comparison function asynchronously (always run, regardless of time)
-        try:
-            lambda_client.invoke(
-                FunctionName=os.environ.get('COMPARISON_FUNCTION_NAME'),
-                InvocationType='Event',  # Asynchronous invocation
-                Payload=json.dumps({
-                    'triggered_by': 'image_processor',
-                    'timestamp': timestamp,
-                    'model_name': 'ModelA'  # Default to ModelA for now
-                })
-            )
-            print("Comparison function invoked successfully")
-        except Exception as e:
-            print(f"Error invoking comparison function: {str(e)}")
-            # Don't fail the main function if comparison fails
+        # Invoke comparison functions for all models asynchronously (always run, regardless of time)
+        models = ['ModelA', 'ModelB']  # All available models
+        for model_name in models:
+            try:
+                lambda_client.invoke(
+                    FunctionName=os.environ.get('COMPARISON_FUNCTION_NAME'),
+                    InvocationType='Event',  # Asynchronous invocation
+                    Payload=json.dumps({
+                        'triggered_by': 'image_processor',
+                        'timestamp': timestamp,
+                        'model_name': model_name
+                    })
+                )
+                print(f"Comparison function invoked successfully for {model_name}")
+            except Exception as e:
+                print(f"Error invoking comparison function for {model_name}: {str(e)}")
+                # Don't fail the main function if comparison fails
         
         # Check if current minute is between 55-59 or 00-04
         if not (current_minute >= 55 or current_minute <= 4):
@@ -46,7 +48,8 @@ def handler(event, context):
                     'message': 'Image processing skipped - not in processing window',
                     'current_minute': current_minute,
                     'processing_window': 'minutes 55-59 or 00-04',
-                    'comparison_invoked': True
+                    'comparison_invoked': True,
+                    'models_invoked': models
                 })
             }
         
