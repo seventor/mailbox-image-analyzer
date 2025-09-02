@@ -14,6 +14,9 @@ lambda/*-layer/
 lambda/pillow-layer/
 lambda/numpy-layer/
 
+# Playwright MCP testing
+.playwright-mcp/
+
 # TypeScript
 *.tsbuildinfo
 
