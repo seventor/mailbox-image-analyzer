@@ -28,7 +28,8 @@ def handler(event, context):
                 InvocationType='Event',  # Asynchronous invocation
                 Payload=json.dumps({
                     'triggered_by': 'image_processor',
-                    'timestamp': timestamp
+                    'timestamp': timestamp,
+                    'model_name': 'ModelA'  # Default to ModelA for now
                 })
             )
             print("Comparison function invoked successfully")

@@ -612,6 +612,7 @@
         let selectedImages = new Set();
         let currentFolder = '';
         let comparisonChart = null;
+        let currentModel = 'ModelA';  // Default model
 
         // Initialize the app
         document.addEventListener('DOMContentLoaded', function() {
@@ -885,7 +886,7 @@
             const comparisonSection = document.getElementById('comparison-status');
             
             try {
-                const response = await fetch(`${API_BASE_URL}/comparison-status`);
+                const response = await fetch(`${API_BASE_URL}/comparison-status?model=${currentModel}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -909,6 +910,9 @@
                                 <span style="font-weight: 600; color: ${statusColor}; font-size: 12px;">${statusText}</span>
                             </div>
                             <div style="margin-bottom: 2px; font-size: 11px;">
+                                <strong>Model:</strong> ${currentModel}
+                            </div>
+                            <div style="margin-bottom: 2px; font-size: 11px;">
                                 <strong>Difference:</strong> ${differencePercent}%
                             </div>
                             <div style="margin-bottom: 2px; font-size: 11px;">
@@ -918,13 +922,13 @@
                                 <strong>Time:</strong> ${formatDate(timestamp)}
                             </div>
                             <div style="margin-top: 6px;">
-                                <a href="${CLOUDFRONT_URL}/status/latest-compare.json" 
+                                <a href="${CLOUDFRONT_URL}/status/${currentModel.toLowerCase()}.json" 
                                    target="_blank" 
                                    style="color: #7749f8; text-decoration: none; font-size: 10px;">
                                     📄 View Raw JSON
                                 </a>
                                 <br>
-                                <a href="${CLOUDFRONT_URL}/status/statistics-compare.json" 
+                                <a href="${CLOUDFRONT_URL}/status/statistics-${currentModel.toLowerCase()}.json" 
                                    target="_blank" 
                                    style="color: #7749f8; text-decoration: none; font-size: 10px;">
                                     📊 View Statistics JSON
@@ -935,13 +939,13 @@
                     
                     // Update chart with statistics data
                     if (data.statistics && data.statistics.comparisons) {
-                        updateComparisonChart(data.statistics.comparisons);
+                        updateComparisonChart(data.statistics.comparisons, currentModel);
                     }
                 } else {
                     comparisonSection.innerHTML = `
                         <div class="empty-state">
                             <h3>No comparison data</h3>
-                            <p>No comparison has been performed yet. This will happen automatically when a new image is uploaded.</p>
+                            <p>No comparison has been performed yet for ${currentModel}. This will happen automatically when a new image is uploaded.</p>
                         </div>
                     `;
                 }
@@ -957,7 +961,7 @@
             }
         }
 
-        function updateComparisonChart(comparisons) {
+        function updateComparisonChart(comparisons, modelName) {
             const ctx = document.getElementById('comparison-chart');
             if (!ctx) return;
             
@@ -994,7 +998,7 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Difference Percentage',
+                        label: `${modelName} - Difference Percentage`,
                         data: data,
                         borderColor: '#7749f8',
                         backgroundColor: 'rgba(119, 73, 248, 0.1)',
@@ -1021,6 +1025,14 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
+                        title: {
+                            display: true,
+                            text: `${modelName} Comparison History`,
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        },
                         legend: {
                             display: true,
                             position: 'top',
@@ -1039,7 +1051,7 @@
                                     return context[0].label;
                                 },
                                 label: function(context) {
-                                    if (context.dataset.label === 'Difference Percentage') {
+                                    if (context.dataset.label.includes('Difference Percentage')) {
                                         return `Difference: ${context.parsed.y.toFixed(1)}%`;
                                     }
                                     return context.dataset.label;

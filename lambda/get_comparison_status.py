@@ -11,8 +11,15 @@ s3_client = boto3.client('s3')
 def handler(event, context):
     try:
         bucket_name = os.environ.get('BUCKET_NAME', 'mailbox-image-analyzer-dev')
-        latest_compare_key = 'status/latest-compare.json'
-        statistics_key = 'status/statistics-compare.json'
+        
+        # Get model name from query parameters or default to ModelA
+        model_name = 'ModelA'  # Default model
+        if 'queryStringParameters' in event and event['queryStringParameters']:
+            model_name = event['queryStringParameters'].get('model', 'ModelA')
+        
+        # Use model-specific file names
+        latest_compare_key = f'status/{model_name.lower()}.json'
+        statistics_key = f'status/statistics-{model_name.lower()}.json'
         
         # Get latest comparison
         try:
@@ -31,6 +38,7 @@ def handler(event, context):
         except ClientError as e:
             if e.response['Error']['Code'] == 'NoSuchKey':
                 statistics_data = {
+                    'model_name': model_name,
                     'total_comparisons': 0,
                     'last_updated': None,
                     'comparisons': []
@@ -40,6 +48,7 @@ def handler(event, context):
         
         result = {
             'success': True,
+            'model_name': model_name,
             'latest_comparison': latest_data,
             'statistics': statistics_data
         }
