@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mailbox Image Analyzer</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
     <style>
         * {
             margin: 0;
@@ -1046,11 +1045,18 @@
                     const modelComparisons = allComparisons.filter(c => c.model === model);
                     const colors = ['#7749f8', '#dc2626', '#059669', '#ea580c', '#7c3aed'];
                     
-                    // Create data points with proper time positioning using actual timestamps
-                    const dataPoints = modelComparisons.map(c => ({
-                        x: new Date(c.timestamp).getTime(), // Use actual timestamp in milliseconds
-                        y: c.difference_percentage
-                    }));
+                    // Create data points with proper time positioning using array indices
+                    // This ensures proper spacing based on actual time order
+                    const dataPoints = [];
+                    let dataIndex = 0;
+                    for (let i = 0; i < allComparisons.length; i++) {
+                        if (allComparisons[i].model === model) {
+                            dataPoints.push(modelComparisons[dataIndex].difference_percentage);
+                            dataIndex++;
+                        } else {
+                            dataPoints.push(null);
+                        }
+                    }
                     
                     return {
                         label: model,
@@ -1068,8 +1074,24 @@
                         spanGaps: true
                     };
                 });
-                
-                // Calculate Y-axis min and max with 10% padding
+                    
+                    const colors = ['#7749f8', '#dc2626', '#059669', '#ea580c', '#7c3aed'];
+                    return {
+                        label: model,
+                        data: paddedData,
+                        borderColor: colors[index % colors.length],
+                        backgroundColor: colors[index % colors.length] + '20',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.1,
+                        pointBackgroundColor: colors[index % colors.length],
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        spanGaps: true
+                    };
+                });
                 
                 // Calculate Y-axis min and max with 10% padding
                 const allValues = allComparisons.map(c => c.difference_percentage);
@@ -1090,6 +1112,7 @@
                 comparisonChart = new Chart(ctx, {
                     type: 'line',
                     data: {
+                        labels: labels,
                         datasets: datasets
                     },
                     options: {
@@ -1130,20 +1153,12 @@
                         },
                         scales: {
                             x: {
-                                type: 'time',
                                 display: true,
                                 title: {
                                     display: true,
                                     text: 'Time',
                                     font: {
                                         size: 12
-                                    }
-                                },
-                                time: {
-                                    unit: 'hour',
-                                    displayFormats: {
-                                        hour: 'HH:mm',
-                                        day: 'DD.MM'
                                     }
                                 },
                                 ticks: {
