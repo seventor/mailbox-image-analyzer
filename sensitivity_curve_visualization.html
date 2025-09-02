@@ -365,7 +365,21 @@
                         x: {
                             title: {
                                 display: true,
-                                text: 'Raw Difference Percentage (ModelA)'
+                                text: 'Raw Difference Percentage (ModelA)',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    // Show every 10th tick label to avoid crowding
+                                    if (index % 5 === 0) {
+                                        return value + '%';
+                                    }
+                                    return '';
+                                },
+                                maxTicksLimit: 20
                             },
                             min: 0,
                             max: 100
@@ -373,7 +387,16 @@
                         y: {
                             title: {
                                 display: true,
-                                text: 'Adjusted Difference Percentage'
+                                text: 'Adjusted Difference Percentage',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    return value + '%';
+                                }
                             },
                             min: 0,
                             max: 100

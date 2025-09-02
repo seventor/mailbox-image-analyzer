@@ -1252,7 +1252,8 @@
                                     display: true,
                                     text: 'Time',
                                     font: {
-                                        size: 12
+                                        size: 12,
+                                        weight: 'bold'
                                     }
                                 },
                                 time: {
@@ -1266,7 +1267,10 @@
                                     font: {
                                         size: 10
                                     },
-                                    maxRotation: 45
+                                    maxRotation: 45,
+                                    source: 'auto',
+                                    autoSkip: false,
+                                    maxTicksLimit: 10
                                 }
                             },
                             y: {
@@ -1275,7 +1279,8 @@
                                     display: true,
                                     text: 'Difference Percentage (%)',
                                     font: {
-                                        size: 12
+                                        size: 12,
+                                        weight: 'bold'
                                     }
                                 },
                                 min: yMin,
@@ -1283,6 +1288,9 @@
                                 ticks: {
                                     font: {
                                         size: 10
+                                    },
+                                    callback: function(value, index, values) {
+                                        return value + '%';
                                     }
                                 }
                             }
