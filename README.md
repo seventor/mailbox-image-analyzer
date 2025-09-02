@@ -55,6 +55,68 @@ S3 Bucket: mailbox-image-analyzer-dev
 └── index.html                         # Web application
 ```
 
+## Development Setup
+
+### Prerequisites
+
+- Node.js 18+
+- Python 3.11+
+- AWS CLI configured
+- AWS CDK CLI installed globally
+
+### Local Development
+
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   cd mailbox-image-analyzer
+   ```
+
+2. **Build Lambda layers** (required for local deployment):
+   ```bash
+   ./build-layers.sh
+   ```
+
+3. **Install CDK dependencies**:
+   ```bash
+   cd cdk && npm install
+   ```
+
+4. **Deploy to dev environment**:
+   ```bash
+   npm run deploy:dev
+   ```
+
+### Lambda Layers
+
+The project uses Lambda layers to package external Python dependencies:
+
+- **numpy-layer**: Contains NumPy library for numerical computations
+- **pillow-layer**: Contains Pillow library for image processing
+- **common-layer**: Contains shared utility functions
+
+These layers are built automatically during GitHub Actions deployment and should not be committed to git.
+
+### Deployment
+
+#### Local Deployment
+```bash
+# Build layers first
+./build-layers.sh
+
+# Deploy to dev
+cd cdk && npm run deploy:dev
+
+# Deploy to prod
+cd cdk && npm run deploy:prod
+```
+
+#### GitHub Actions Deployment
+- **Dev**: Automatic deployment on push to `dev` branch
+- **Prod**: Automatic deployment on push to `master` branch
+
+The GitHub Actions workflow automatically builds Lambda layers during deployment.
+
 ## Infrastructure
 
 ### S3 Bucket
