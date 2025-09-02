@@ -102,8 +102,8 @@ def handler(event, context):
                         image = image.convert('RGB')
                     
                     # Resize to a standard size for consistent processing
-                    # Use a reasonable size that balances quality and memory usage
-                    target_size = (800, 600)  # 4:3 aspect ratio
+                    # Use the same size as the source images (1024x576)
+                    target_size = (1024, 576)  # Match source image dimensions
                     image = image.resize(target_size, Image.Resampling.LANCZOS)
                     
                     # Convert to numpy array
