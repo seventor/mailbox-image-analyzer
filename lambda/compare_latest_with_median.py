@@ -22,8 +22,8 @@ def modelA_comparison(latest_image, median_image, latest_image_key, median_image
     if median_image.mode != 'L':
         median_image = median_image.convert('L')
     
-    # Resize both images to same size for comparison (use median size as reference)
-    target_size = (800, 600)
+    # Resize both images to same size for comparison
+    target_size = (1024, 576)
     latest_image = latest_image.resize(target_size, Image.Resampling.LANCZOS)
     median_image = median_image.resize(target_size, Image.Resampling.LANCZOS)
     
@@ -64,8 +64,8 @@ def modelB_comparison(latest_image, median_image, latest_image_key, median_image
     if median_image.mode != 'L':
         median_image = median_image.convert('L')
     
-    # Resize both images to same size for comparison (use median size as reference)
-    target_size = (800, 600)
+    # Resize both images to same size for comparison
+    target_size = (1024, 576)
     latest_image = latest_image.resize(target_size, Image.Resampling.LANCZOS)
     median_image = median_image.resize(target_size, Image.Resampling.LANCZOS)
     
@@ -104,84 +104,32 @@ def modelB_comparison(latest_image, median_image, latest_image_key, median_image
 
 def modelC_comparison(latest_image, median_image, latest_image_key, median_image_key):
     """
-    Model C: Same comparison as ModelB but with cropping applied to both images
-    - Uses same grayscale pixel comparison as ModelA
-    - Applies sensitivity curve: amplifies 0-40%, dampens 40-100%
-    - Crops both images before comparison using specified crop area
-    - Resizes both images to same size BEFORE cropping for consistent crop coordinates
-    - Saves cropped images for inspection
-    - Never exceeds 100%
+    Model C: No cropping. Same comparison grid as ModelA/B (1024x576),
+    applies Gaussian horizontal weighting and Model C sensitivity curve.
     """
-    # First, resize both images to the same size for consistent cropping
-    # Use the source image dimensions since median will now match
-    target_size_before_crop = (1024, 576)  # Both images will be this size
-    
-    latest_resized = latest_image.resize(target_size_before_crop, Image.Resampling.LANCZOS)
-    median_resized = median_image.resize(target_size_before_crop, Image.Resampling.LANCZOS)
-    
-    # Crop both images using the specified crop area (now applied to same-sized images)
-    # Crop area: X=338, Y=33, Width=388, Height=543
-    crop_area = (338, 33, 338 + 388, 33 + 543)  # (left, top, right, bottom)
-    
-    # Crop the images
-    latest_cropped = latest_resized.crop(crop_area)
-    median_cropped = median_resized.crop(crop_area)
-    
-    # Save cropped images for inspection
-    try:
-        # Convert to RGB for saving as JPEG
-        latest_cropped_rgb = latest_cropped.convert('RGB')
-        median_cropped_rgb = median_cropped.convert('RGB')
-        
-        # Save to memory buffers
-        latest_buffer = io.BytesIO()
-        median_buffer = io.BytesIO()
-        
-        latest_cropped_rgb.save(latest_buffer, format='JPEG', quality=95)
-        median_cropped_rgb.save(median_buffer, format='JPEG', quality=95)
-        
-        # Upload to S3
-        bucket_name = os.environ['BUCKET_NAME']
-        s3_client.put_object(
-            Bucket=bucket_name,
-            Key='modelc-latest-cropped.jpg',
-            Body=latest_buffer.getvalue(),
-            ContentType='image/jpeg'
-        )
-        s3_client.put_object(
-            Bucket=bucket_name,
-            Key='modelc-median-cropped.jpg',
-            Body=median_buffer.getvalue(),
-            ContentType='image/jpeg'
-        )
-        
-        logger.info("ModelC: Saved cropped images for inspection")
-    except Exception as e:
-        logger.error(f"ModelC: Failed to save cropped images: {str(e)}")
-    
-    # Convert to grayscale if not already (same as ModelA)
-    if latest_cropped.mode != 'L':
-        latest_cropped = latest_cropped.convert('L')
-    if median_cropped.mode != 'L':
-        median_cropped = median_cropped.convert('L')
-    
-    # Resize both images to same size for comparison (same as ModelA)
-    target_size = (800, 600)
-    latest_cropped = latest_cropped.resize(target_size, Image.Resampling.LANCZOS)
-    median_cropped = median_cropped.resize(target_size, Image.Resampling.LANCZOS)
-    
-    # Convert to numpy arrays (same as ModelA)
-    latest_array = np.array(latest_cropped, dtype=np.float32)
-    median_array = np.array(median_cropped, dtype=np.float32)
-    
-    # Calculate difference (same as ModelA)
-    logger.info("ModelC: Calculating pixel differences (same as ModelA) with cropping")
+    # Convert to grayscale if not already (same as ModelA/B)
+    if latest_image.mode != 'L':
+        latest_image = latest_image.convert('L')
+    if median_image.mode != 'L':
+        median_image = median_image.convert('L')
+
+    # Resize both images to same size for comparison (same as ModelA/B)
+    target_size = (1024, 576)
+    latest_image = latest_image.resize(target_size, Image.Resampling.LANCZOS)
+    median_image = median_image.resize(target_size, Image.Resampling.LANCZOS)
+
+    # Convert to numpy arrays (same as ModelA/B)
+    latest_array = np.array(latest_image, dtype=np.float32)
+    median_array = np.array(median_image, dtype=np.float32)
+
+    # Calculate difference (same as ModelA/B)
+    logger.info("ModelC: Calculating pixel differences (no cropping)")
     diff_array = np.abs(latest_array - median_array)
     
-    # Calculate percentage difference with horizontal weighting
-    # - Pixels in the horizontal center are weighted +25%
-    # - Pixels near the left/right edges are weighted -25%
-    # - Weights vary linearly from 0.75 at edges to 1.25 at center
+    # Calculate percentage difference with horizontal weighting (Gaussian)
+    # - Strongly emphasizes the horizontal center, smoothly tapering to ~0 at edges
+    # - Peak weight ~2.0 at center (equivalent to +100%), ~0 at edges (−100%)
+    # - Sigma chosen relative to width for a pronounced center focus
     total_pixels = latest_array.size
     binary_mask = (diff_array > 10)
     different_pixels = int(np.sum(binary_mask))  # unweighted count for reference/metrics
@@ -189,7 +137,10 @@ def modelC_comparison(latest_image, median_image, latest_image_key, median_image
     height, width = latest_array.shape
     center_x = (width - 1) / 2.0
     # weights_row shape: (width,)
-    weights_row = 1.25 - 0.5 * (np.abs(np.arange(width, dtype=np.float32) - center_x) / center_x)
+    # Gaussian weights: 2.0 * exp(-0.5 * ((x - center)/sigma)^2)
+    x = np.arange(width, dtype=np.float32)
+    sigma = max(width / 6.0, 1.0)
+    weights_row = 2.0 * np.exp(-0.5 * ((x - center_x) / sigma) ** 2)
     # Broadcast to full image and compute weighted sum of differing pixels
     weighted_different_pixels = float((binary_mask.astype(np.float32) * weights_row[None, :]).sum())
     weighted_total = float(weights_row.sum() * height)
@@ -218,25 +169,10 @@ def modelC_comparison(latest_image, median_image, latest_image_key, median_image
         'difference_percentage': round(final_difference_percentage, 2),
         'total_pixels': int(total_pixels),
         'different_pixels': int(different_pixels),
-        'weighted_different_pixels': round(weighted_different_pixels, 2),
-        'raw_difference_percentage': round(raw_difference_percentage, 2),
-        'adjusted_difference_percentage': round(adjusted_percentage, 2),
         'has_mail': bool(has_mail),
-        'threshold': 50.0,  # Threshold for mail detection
+        'threshold': 50.0,
         'image_size': target_size,
-        'method': 'pixel_difference_grayscale_with_sensitivity_curve_and_cropping',
-        'crop_area': {
-            'x': 338,
-            'y': 33,
-            'width': 388,
-            'height': 543
-        },
-        'sensitivity_curve': {
-            'amplification_factor': 1.05,
-            'amplification_range': '0-40%',
-            'dampening_factor': 0.05,
-            'dampening_range': '40-100%'
-        }
+        'method': 'pixel_difference_grayscale_with_gaussian_horizontal_weighting'
     }
 
 def run_comparison_model(model_name, latest_image, median_image, latest_image_key, median_image_key):
