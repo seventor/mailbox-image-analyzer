@@ -755,7 +755,7 @@
             loadAllComparisonStatus();
             loadImagesForAllTabs();
             
-            // Set up automatic refresh every 5 minutes (300,000 milliseconds)
+            // Set up automatic refresh every 1 minute (60,000 milliseconds)
             setInterval(function() {
                 // Only refresh if we're on the Overview tab
                 const overviewTab = document.getElementById('overview-tab');
@@ -764,7 +764,7 @@
                     loadLatestImage();
                     loadAllComparisonStatus();
                 }
-            }, 5 * 60 * 1000); // 5 minutes
+            }, 1 * 60 * 1000); // 1 minute
         });
 
         function showTab(tabName, event) {
