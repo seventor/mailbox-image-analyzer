@@ -66,6 +66,19 @@
             gap: 8px;
         }
 
+        .last-updated {
+            font-size: 11px;
+            color: #9ca3af;
+            font-weight: 400;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .last-updated .icon {
+            font-size: 10px;
+        }
+
         /* Top Navigation */
         .top-nav {
             background-color: #ffffff;
@@ -575,6 +588,10 @@
                 <div class="app-title">
                     📸 Mailbox Analyzer
                 </div>
+                <div class="last-updated">
+                    <span class="icon">🕐</span>
+                    <span id="last-updated-time">Loading...</span>
+                </div>
             </div>
         </div>
 
@@ -754,6 +771,7 @@
             loadMedianImage();
             loadAllComparisonStatus();
             loadImagesForAllTabs();
+            updateLastUpdatedTime();
             
             // Set up automatic refresh every 1 minute (60,000 milliseconds)
             setInterval(function() {
@@ -763,6 +781,7 @@
                     console.log('Auto-refreshing Overview data...');
                     loadLatestImage();
                     loadAllComparisonStatus();
+                    updateLastUpdatedTime();
                 }
             }, 1 * 60 * 1000); // 1 minute
         });
@@ -919,6 +938,14 @@
                 
                 gallery.appendChild(imageCard);
             });
+        }
+
+        function updateLastUpdatedTime() {
+            const now = new Date();
+            const timeElement = document.getElementById('last-updated-time');
+            if (timeElement) {
+                timeElement.textContent = formatDate(now);
+            }
         }
 
         async function loadLatestImage() {
@@ -1651,6 +1678,7 @@
                     // Reload median image after a delay
                     setTimeout(async () => {
                         await loadMedianImage();
+                        updateLastUpdatedTime();
                     }, 30000); // Wait 30 seconds before checking
                 } else {
                     throw new Error(result.error || 'Failed to trigger median image creation');
@@ -1749,6 +1777,7 @@
                     setTimeout(async () => {
                         await loadComparisonStatus();
                         await loadComparisonChart();
+                        updateLastUpdatedTime();
                     }, 10000); // Wait 10 seconds before checking
                 } else {
                     throw new Error(result.error || 'Failed to trigger comparison');
