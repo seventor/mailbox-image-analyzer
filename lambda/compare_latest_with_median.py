@@ -40,8 +40,8 @@ def modelA_comparison(latest_image, median_image, latest_image_key, median_image
     different_pixels = np.sum(diff_array > 10)  # Threshold of 10 for significant difference
     difference_percentage = (different_pixels / total_pixels) * 100
     
-    # Determine if there's mail (threshold: 15%)
-    has_mail = difference_percentage > 15
+    # Determine if there's mail (threshold: 60%)
+    has_mail = difference_percentage > 60
     
     return {
         'model_name': 'ModelA',
@@ -49,7 +49,7 @@ def modelA_comparison(latest_image, median_image, latest_image_key, median_image
         'total_pixels': int(total_pixels),
         'different_pixels': int(different_pixels),
         'has_mail': bool(has_mail),
-        'threshold': 15.0,
+        'threshold': 60.0,
         'image_size': target_size,
         'method': 'pixel_difference_grayscale'
     }
@@ -86,8 +86,8 @@ def modelB_comparison(latest_image, median_image, latest_image_key, median_image
     # This creates a curve that's very gentle at low values and extremely steep at high values
     adjusted_difference_percentage = (raw_difference_percentage ** 3) / 10000
     
-    # Determine if there's mail (threshold: 15%)
-    has_mail = adjusted_difference_percentage > 15
+    # Determine if there's mail (threshold: 25%)
+    has_mail = adjusted_difference_percentage > 25
     
     return {
         'model_name': 'ModelB',
@@ -96,7 +96,7 @@ def modelB_comparison(latest_image, median_image, latest_image_key, median_image
         'different_pixels': int(different_pixels),
         'raw_difference_percentage': round(raw_difference_percentage, 2),
         'has_mail': bool(has_mail),
-        'threshold': 15.0,
+        'threshold': 25.0,
         'image_size': target_size,
         'method': 'pixel_difference_grayscale_with_cubic_curve',
         'sensitivity_formula': 'raw³ / 10000'
@@ -198,8 +198,8 @@ def modelC_comparison(latest_image, median_image, latest_image_key, median_image
     # Ensure we never exceed 100%
     final_difference_percentage = min(adjusted_percentage, 100.0)
     
-    # More sensitive threshold for mail detection (10% instead of 15%)
-    has_mail = final_difference_percentage > 10
+    # Threshold for mail detection (50%)
+    has_mail = final_difference_percentage > 50
     
     return {
         'model_name': 'ModelC',
@@ -209,7 +209,7 @@ def modelC_comparison(latest_image, median_image, latest_image_key, median_image
         'raw_difference_percentage': round(raw_difference_percentage, 2),
         'adjusted_difference_percentage': round(adjusted_percentage, 2),
         'has_mail': bool(has_mail),
-        'threshold': 10.0,  # More sensitive threshold
+        'threshold': 50.0,  # Threshold for mail detection
         'image_size': target_size,
         'method': 'pixel_difference_grayscale_with_sensitivity_curve_and_cropping',
         'crop_area': {
