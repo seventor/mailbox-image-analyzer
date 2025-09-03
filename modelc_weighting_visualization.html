@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Model C Weighting Visualization</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; color: #111827; }
+        h1 { font-size: 18px; margin: 0 0 16px; }
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; background: #fff; }
+        .row { display: grid; grid-template-columns: 180px 1fr 120px; align-items: center; gap: 12px; margin: 8px 0; }
+        .label { font-weight: 600; font-size: 13px; color: #374151; }
+        input[type="range"] { width: 100%; }
+        .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+        .hint { color: #6b7280; font-size: 12px; }
+        .footer { margin-top: 16px; color: #6b7280; font-size: 12px; }
+    </style>
+    <script>
+        // Computes the per-column weight curve for a given width using a super/gaussian
+        // centerBoostPct: 0..300 (where 100 => 2.0x at center)
+        // sigmaPct: 2..50 (% of width controlling width of the peak)
+        // exponentP: 1..8 (higher => steeper center, narrower shoulders)
+        function computeWeights(width, centerBoostPct, sigmaPct, exponentP) {
+            const center = (width - 1) / 2;
+            const boost = 1 + (centerBoostPct / 100); // e.g. 100% => 2.0x at center
+            const sigma = Math.max((sigmaPct / 100) * width, 1);
+            const p = Math.max(exponentP, 0.1);
+
+            const weights = new Array(width);
+            for (let x = 0; x < width; x++) {
+                const d = Math.abs(x - center) / sigma; // normalized distance by sigma
+                const w = boost * Math.exp(-0.5 * Math.pow(d, p));
+                weights[x] = w;
+            }
+            return weights;
+        }
+
+        function normalizeWeights(weights, height) {
+            // For Model C we normalize by total weight * height when computing percent
+            const colSum = weights.reduce((a, b) => a + b, 0);
+            return { totalWeight: colSum * height, sumCols: colSum };
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const width = 1024; // matches comparison width
+            const height = 576; // not used in curve, but reported
+
+            const centerSlider = document.getElementById('centerBoost');
+            const centerValue = document.getElementById('centerBoostValue');
+            const sigmaSlider = document.getElementById('sigmaPct');
+            const sigmaValue = document.getElementById('sigmaPctValue');
+            const expoSlider = document.getElementById('exponentP');
+            const expoValue = document.getElementById('exponentPValue');
+            const metaEl = document.getElementById('meta');
+
+            const ctx = document.getElementById('curveChart');
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({ length: width }, (_, i) => i),
+                    datasets: [{
+                        label: 'Horizontal Weight',
+                        data: [],
+                        borderColor: '#111827',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.25,
+                    }]
+                },
+                options: {
+                    animation: false,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { title: { display: true, text: 'Column (x)' }, ticks: { maxTicksLimit: 12 } },
+                        y: { title: { display: true, text: 'Weight (multiplier)' }, suggestedMin: 0, suggestedMax: 2.5 }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            function update() {
+                const centerPct = Number(centerSlider.value);
+                const sigmaPct = Number(sigmaSlider.value);
+                const p = Number(expoSlider.value);
+
+                centerValue.textContent = `${centerPct}%`;
+                sigmaValue.textContent = `${sigmaPct}% of width`;
+                expoValue.textContent = `p = ${p.toFixed(2)}`;
+
+                const weights = computeWeights(width, centerPct, sigmaPct, p);
+                const { totalWeight, sumCols } = normalizeWeights(weights, height);
+
+                chart.data.datasets[0].data = weights;
+                chart.update();
+
+                const centerWeight = Math.max(...weights).toFixed(3);
+                const edgeWeight = Math.min(weights[0], weights[weights.length - 1]).toFixed(3);
+                metaEl.textContent = `center weight ≈ ${centerWeight}, edge weight ≈ ${edgeWeight}, Σcols = ${sumCols.toFixed(1)}, normalization denom = Σcols×height ≈ ${(totalWeight).toFixed(0)}`;
+            }
+
+            centerSlider.addEventListener('input', update);
+            sigmaSlider.addEventListener('input', update);
+            expoSlider.addEventListener('input', update);
+
+            update();
+        });
+    </script>
+</head>
+<body>
+    <h1>Model C Horizontal Weighting – Interactive Curve</h1>
+    <div class="controls">
+        <div class="card">
+            <div class="row">
+                <div class="label">Center emphasis</div>
+                <input id="centerBoost" type="range" min="0" max="300" step="1" value="100" />
+                <div class="mono" id="centerBoostValue">100%</div>
+            </div>
+            <div class="hint">How much higher the middle should count vs base (100% = 2.0× center multiplier).</div>
+        </div>
+        <div class="card">
+            <div class="row">
+                <div class="label">Curve width (sigma)</div>
+                <input id="sigmaPct" type="range" min="2" max="50" step="0.5" value="16.7" />
+                <div class="mono" id="sigmaPctValue">16.7% of width</div>
+            </div>
+            <div class="row">
+                <div class="label">Steepness exponent (p)</div>
+                <input id="exponentP" type="range" min="1" max="8" step="0.1" value="2.0" />
+                <div class="mono" id="exponentPValue">p = 2.0</div>
+            </div>
+            <div class="hint">Smaller sigma or larger p makes the peak narrower/steeper; larger sigma or smaller p makes it wider/flatter.</div>
+        </div>
+    </div>
+
+    <div class="card" style="height: 360px;">
+        <canvas id="curveChart"></canvas>
+    </div>
+    <div class="footer mono" id="meta"></div>
+
+    <div class="footer">Open locally at <span class="mono">http://localhost:8000/modelc_weighting_visualization.html</span> using your local server.</div>
+</body>
+<script>
+</script>
+</html>
+
+

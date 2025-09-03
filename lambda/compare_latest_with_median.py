@@ -126,10 +126,11 @@ def modelC_comparison(latest_image, median_image, latest_image_key, median_image
     logger.info("ModelC: Calculating pixel differences (no cropping)")
     diff_array = np.abs(latest_array - median_array)
     
-    # Calculate percentage difference with horizontal weighting (Gaussian)
-    # - Strongly emphasizes the horizontal center, smoothly tapering to ~0 at edges
-    # - Peak weight ~2.0 at center (equivalent to +100%), ~0 at edges (−100%)
-    # - Sigma chosen relative to width for a pronounced center focus
+    # Calculate percentage difference with horizontal weighting (Super-Gaussian)
+    # - Center emphasis: 150% (2.5× multiplier at center)
+    # - Curve width: 20.5% of width (sigma)
+    # - Steepness exponent: 2.80 (p)
+    # - Smoothly tapers to ~0 at edges
     total_pixels = latest_array.size
     binary_mask = (diff_array > 10)
     different_pixels = int(np.sum(binary_mask))  # unweighted count for reference/metrics
@@ -137,10 +138,12 @@ def modelC_comparison(latest_image, median_image, latest_image_key, median_image
     height, width = latest_array.shape
     center_x = (width - 1) / 2.0
     # weights_row shape: (width,)
-    # Gaussian weights: 2.0 * exp(-0.5 * ((x - center)/sigma)^2)
+    # Super-Gaussian weights: 2.5 * exp(-0.5 * ((x - center)/sigma)^p)
     x = np.arange(width, dtype=np.float32)
-    sigma = max(width / 6.0, 1.0)
-    weights_row = 2.0 * np.exp(-0.5 * ((x - center_x) / sigma) ** 2)
+    sigma = max((20.5 / 100.0) * width, 1.0)  # 20.5% of width
+    p = 2.80  # steepness exponent
+    boost = 2.5  # center multiplier (150% emphasis)
+    weights_row = boost * np.exp(-0.5 * ((np.abs(x - center_x) / sigma) ** p))
     # Broadcast to full image and compute weighted sum of differing pixels
     weighted_different_pixels = float((binary_mask.astype(np.float32) * weights_row[None, :]).sum())
     weighted_total = float(weights_row.sum() * height)
