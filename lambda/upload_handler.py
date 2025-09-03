@@ -41,7 +41,11 @@ def handler(event, context):
             Bucket=bucket_name,
             Key='uploads/latest.jpg',
             Body=image_bytes,
-            ContentType='image/jpeg'
+            ContentType='image/jpeg',
+            CacheControl='no-store',  # Simple and robust
+            Metadata={
+                'uploaded-at': datetime.now().isoformat()
+            }
         )
         logger.info("Upload completed successfully")
         
