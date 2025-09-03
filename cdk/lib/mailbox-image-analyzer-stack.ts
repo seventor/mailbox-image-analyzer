@@ -100,26 +100,18 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
         origin: s3Origin,
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
-        functionAssociations: [
-          {
-            function: new cloudfront.Function(this, 'RootPathFunction', {
-              code: cloudfront.FunctionCode.fromInline(`
-                function handler(event) {
-                  var request = event.request;
-                  var uri = request.uri;
-                  
-                  // If accessing root path, serve index.html
-                  if (uri === '/') {
-                    request.uri = '/index.html';
-                  }
-                  
-                  return request;
-                }
-              `),
-            }),
-            eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
-          },
-        ],
+      },
+      additionalBehaviors: {
+        '/': {
+          origin: s3Origin,
+          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+        },
+        '/median-image/*': {
+          origin: s3Origin,
+          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+        },
       },
       domainNames: [domainName],
       certificate: certificate,
@@ -417,12 +409,64 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
     // Grant S3 read/write permissions to edit statistics function
     this.imageBucket.grantReadWrite(editStatisticsFunction);
 
+    // Create Lambda function for triggering median image creation
+    const triggerMedianImageFunction = new lambda.Function(this, 'TriggerMedianImageFunction', {
+      runtime: lambda.Runtime.PYTHON_3_11,
+      handler: 'trigger_median_image.handler',
+      code: lambda.Code.fromAsset('../lambda'),
+      timeout: cdk.Duration.minutes(1),
+      memorySize: 256,
+      environment: {
+        BUCKET_NAME: this.imageBucket.bucketName,
+        ENVIRONMENT: props.environment,
+        MEDIAN_FUNCTION_NAME: createMedianImageFunction.functionName,
+      },
+    });
+
+    // Grant invoke permission to trigger median image function
+    createMedianImageFunction.grantInvoke(triggerMedianImageFunction);
+
+    // Create Lambda function for reading median image log
+    const readMedianLogFunction = new lambda.Function(this, 'ReadMedianLogFunction', {
+      runtime: lambda.Runtime.PYTHON_3_11,
+      handler: 'read_median_log.handler',
+      code: lambda.Code.fromAsset('../lambda'),
+      timeout: cdk.Duration.minutes(1),
+      memorySize: 256,
+      environment: {
+        BUCKET_NAME: this.imageBucket.bucketName,
+      },
+    });
+
+    // Grant S3 read permissions to read median log function
+    this.imageBucket.grantRead(readMedianLogFunction);
+
+    // Create Lambda function for triggering comparison
+    const triggerComparisonFunction = new lambda.Function(this, 'TriggerComparisonFunction', {
+      runtime: lambda.Runtime.PYTHON_3_11,
+      handler: 'trigger_comparison.handler',
+      code: lambda.Code.fromAsset('../lambda'),
+      timeout: cdk.Duration.minutes(1),
+      memorySize: 256,
+      environment: {
+        BUCKET_NAME: this.imageBucket.bucketName,
+        ENVIRONMENT: props.environment,
+        COMPARISON_FUNCTION_NAME: compareLatestWithMedianFunction.functionName,
+      },
+    });
+
+    // Grant invoke permission to trigger comparison function
+    compareLatestWithMedianFunction.grantInvoke(triggerComparisonFunction);
+
     // Create API Gateway integrations
     const listImagesIntegration = new apigateway.LambdaIntegration(listImagesFunction);
     const getStatsIntegration = new apigateway.LambdaIntegration(getStatsFunction);
     const moveImagesIntegration = new apigateway.LambdaIntegration(moveImagesFunction);
     const getComparisonStatusIntegration = new apigateway.LambdaIntegration(getComparisonStatusFunction);
     const editStatisticsIntegration = new apigateway.LambdaIntegration(editStatisticsFunction);
+    const triggerMedianImageIntegration = new apigateway.LambdaIntegration(triggerMedianImageFunction);
+    const readMedianLogIntegration = new apigateway.LambdaIntegration(readMedianLogFunction);
+    const triggerComparisonIntegration = new apigateway.LambdaIntegration(triggerComparisonFunction);
 
     // Add list images endpoint
     const listImagesResource = api.root.addResource('list-images');
@@ -444,6 +488,18 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
     const editStatisticsResource = api.root.addResource('edit-statistics');
     editStatisticsResource.addMethod('GET', editStatisticsIntegration);
     editStatisticsResource.addMethod('POST', editStatisticsIntegration);
+
+    // Add trigger median image endpoint
+    const triggerMedianImageResource = api.root.addResource('trigger-median-image');
+    triggerMedianImageResource.addMethod('POST', triggerMedianImageIntegration);
+
+    // Add read median log endpoint
+    const readMedianLogResource = api.root.addResource('read-median-log');
+    readMedianLogResource.addMethod('GET', readMedianLogIntegration);
+
+    // Add trigger comparison endpoint
+    const triggerComparisonResource = api.root.addResource('trigger-comparison');
+    triggerComparisonResource.addMethod('POST', triggerComparisonIntegration);
 
     // Output the bucket ARN
     new cdk.CfnOutput(this, 'ImageBucketArn', {

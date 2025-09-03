@@ -14,7 +14,7 @@ s3_client = boto3.client('s3')
 
 def handler(event, context):
     """
-    Create a median image from the latest 7 images in the without-mail folder.
+    Create a median image from the latest 189 images in the without-mail folder.
     The median image represents an average of how the mailbox looks without mail.
     """
     
@@ -23,7 +23,7 @@ def handler(event, context):
         source_folder = 'ai-training-data/without-mail'
         target_folder = 'median-image'
         target_filename = 'median.jpg'
-        num_images = 7
+        num_images = 189
         
         logger.info(f"Starting median image creation from {source_folder}")
         logger.info(f"Will use latest {num_images} images to create median")
@@ -71,6 +71,18 @@ def handler(event, context):
             latest_images = jpg_files[:num_images]
             logger.info(f"Found {len(latest_images)} images to process")
             
+            # Create log data with bucket and filenames
+            log_data = {
+                'bucket_name': bucket_name,
+                'created_at': datetime.now(timezone.utc).isoformat(),
+                'source_folder': source_folder,
+                'target_folder': target_folder,
+                'target_filename': target_filename,
+                'num_images_requested': num_images,
+                'num_images_found': len(latest_images),
+                'files_used': []
+            }
+            
             if len(latest_images) < 3:
                 logger.warning(f"Not enough images ({len(latest_images)}) to create meaningful median. Need at least 3.")
                 return {
@@ -89,6 +101,14 @@ def handler(event, context):
             for i, obj in enumerate(latest_images):
                 try:
                     logger.info(f"Processing image {i+1}/{len(latest_images)}: {obj['Key']}")
+                    
+                    # Add file info to log
+                    log_data['files_used'].append({
+                        'filename': obj['Key'],
+                        'size_bytes': obj['Size'],
+                        'last_modified': obj['LastModified'].isoformat(),
+                        'processing_order': i + 1
+                    })
                     
                     # Download image from S3
                     response = s3_client.get_object(Bucket=bucket_name, Key=obj['Key'])
@@ -148,6 +168,8 @@ def handler(event, context):
                 Key=target_key,
                 Body=img_buffer.getvalue(),
                 ContentType='image/jpeg',
+                CacheControl='no-cache, no-store, must-revalidate',
+                Expires='0',
                 Metadata={
                     'created_at': datetime.now(timezone.utc).isoformat(),
                     'source_images': str(len(image_arrays)),
@@ -155,7 +177,28 @@ def handler(event, context):
                 }
             )
             
+            # Update log data with final results
+            log_data['num_images_processed'] = len(image_arrays)
+            log_data['median_image_key'] = target_key
+            log_data['median_image_size'] = len(img_buffer.getvalue())
+            
+            # Save log file to S3
+            log_key = f"{target_folder}/log.json"
+            logger.info(f"Saving log file to {log_key}")
+            
+            s3_client.put_object(
+                Bucket=bucket_name,
+                Key=log_key,
+                Body=json.dumps(log_data, indent=2, default=str),
+                ContentType='application/json',
+                Metadata={
+                    'created_at': datetime.now(timezone.utc).isoformat(),
+                    'log_type': 'median_image_creation'
+                }
+            )
+            
             logger.info(f"Successfully created and uploaded median image: {target_key}")
+            logger.info(f"Successfully saved log file: {log_key}")
             
             return {
                 'statusCode': 200,

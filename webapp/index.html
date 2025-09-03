@@ -626,6 +626,11 @@
                 <div class="overview-grid">
                     <div class="overview-card">
                         <h3>📸 Latest Upload</h3>
+                        <div class="overview-actions">
+                            <button onclick="triggerComparison()" class="action-button" style="background: #dc2626; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 11px;">
+                                🔍 Compare Now
+                            </button>
+                        </div>
                         <div id="latest-image" class="overview-content">
                             <div class="loading">Loading latest image...</div>
                         </div>
@@ -633,6 +638,14 @@
                     
                     <div class="overview-card">
                         <h3>📊 Median Image (Empty Mailbox)</h3>
+                        <div class="overview-actions">
+                            <button onclick="triggerMedianImage()" class="action-button" style="background: #059669; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-right: 8px;">
+                                🔄 Create New Median
+                            </button>
+                            <button onclick="showMedianLog()" class="action-button" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 11px;">
+                                📋 View Log
+                            </button>
+                        </div>
                         <div id="median-image" class="overview-content">
                             <div class="loading">Loading median image...</div>
                         </div>
@@ -1610,6 +1623,140 @@
             const modal = document.getElementById('editModal');
             if (event.target === modal) {
                 closeEditModal();
+            }
+        }
+
+        // Median Image Functions
+        async function triggerMedianImage() {
+            try {
+                showNotification('Creating new median image...', 'info');
+                
+                const response = await fetch(`${API_BASE_URL}/trigger-median-image`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('Median image creation triggered successfully! It will be ready in a few minutes.', 'success');
+                    
+                    // Reload median image after a delay
+                    setTimeout(async () => {
+                        await loadMedianImage();
+                    }, 30000); // Wait 30 seconds before checking
+                } else {
+                    throw new Error(result.error || 'Failed to trigger median image creation');
+                }
+                
+            } catch (error) {
+                console.error('Error triggering median image creation:', error);
+                showNotification(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function showMedianLog() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/read-median-log`);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success && data.logExists) {
+                    // Create a modal to display the log
+                    const logModal = document.createElement('div');
+                    logModal.className = 'modal';
+                    logModal.style.display = 'block';
+                    logModal.innerHTML = `
+                        <div class="modal-content" style="max-width: 800px; max-height: 80vh;">
+                            <div class="modal-header">
+                                <h3>Median Image Creation Log</h3>
+                                <span class="close" onclick="this.parentElement.parentElement.parentElement.remove()">&times;</span>
+                            </div>
+                            <div class="modal-body">
+                                <div style="margin-bottom: 10px;">
+                                    <strong>Created:</strong> ${new Date(data.logData.created_at).toLocaleString('nb-NO')}<br>
+                                    <strong>Bucket:</strong> ${data.logData.bucket_name}<br>
+                                    <strong>Source Folder:</strong> ${data.logData.source_folder}<br>
+                                    <strong>Images Requested:</strong> ${data.logData.num_images_requested}<br>
+                                    <strong>Images Found:</strong> ${data.logData.num_images_found}<br>
+                                    <strong>Images Processed:</strong> ${data.logData.num_images_processed}<br>
+                                    <strong>Target File:</strong> ${data.logData.median_image_key}<br>
+                                    <strong>Files Used:</strong>
+                                </div>
+                                <div style="max-height: 400px; overflow-y: auto; border: 1px solid #d1d5db; border-radius: 4px; padding: 8px; background: #f9fafb;">
+                                    <pre style="font-family: 'Courier New', monospace; font-size: 11px; margin: 0;">${JSON.stringify(data.logData.files_used, null, 2)}</pre>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button onclick="this.parentElement.parentElement.parentElement.remove()" style="background: #6b7280; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 12px;">Close</button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.body.appendChild(logModal);
+                    
+                    // Close modal when clicking outside
+                    logModal.onclick = function(event) {
+                        if (event.target === logModal) {
+                            logModal.remove();
+                        }
+                    };
+                    
+                } else {
+                    showNotification('No median image log found. Create a median image first.', 'info');
+                }
+                
+            } catch (error) {
+                console.error('Error reading median log:', error);
+                showNotification(`Error reading log: ${error.message}`, 'error');
+            }
+        }
+
+        // Comparison Functions
+        async function triggerComparison() {
+            try {
+                showNotification('Triggering comparison...', 'info');
+                
+                const response = await fetch(`${API_BASE_URL}/trigger-comparison`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification(`All ${result.models_triggered.length} comparison models triggered successfully! Results will be updated shortly.`, 'success');
+                    
+                    // Reload comparison data after a delay
+                    setTimeout(async () => {
+                        await loadComparisonStatus();
+                        await loadComparisonChart();
+                    }, 10000); // Wait 10 seconds before checking
+                } else {
+                    throw new Error(result.error || 'Failed to trigger comparison');
+                }
+                
+            } catch (error) {
+                console.error('Error triggering comparison:', error);
+                showNotification(`Error: ${error.message}`, 'error');
             }
         }
     </script>
