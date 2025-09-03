@@ -178,10 +178,22 @@ def modelC_comparison(latest_image, median_image, latest_image_key, median_image
     logger.info("ModelC: Calculating pixel differences (same as ModelA) with cropping")
     diff_array = np.abs(latest_array - median_array)
     
-    # Calculate percentage difference (same as ModelA)
+    # Calculate percentage difference with horizontal weighting
+    # - Pixels in the horizontal center are weighted +25%
+    # - Pixels near the left/right edges are weighted -25%
+    # - Weights vary linearly from 0.75 at edges to 1.25 at center
     total_pixels = latest_array.size
-    different_pixels = np.sum(diff_array > 10)  # Same threshold as ModelA
-    raw_difference_percentage = (different_pixels / total_pixels) * 100
+    binary_mask = (diff_array > 10)
+    different_pixels = int(np.sum(binary_mask))  # unweighted count for reference/metrics
+
+    height, width = latest_array.shape
+    center_x = (width - 1) / 2.0
+    # weights_row shape: (width,)
+    weights_row = 1.25 - 0.5 * (np.abs(np.arange(width, dtype=np.float32) - center_x) / center_x)
+    # Broadcast to full image and compute weighted sum of differing pixels
+    weighted_different_pixels = float((binary_mask.astype(np.float32) * weights_row[None, :]).sum())
+    weighted_total = float(weights_row.sum() * height)
+    raw_difference_percentage = (weighted_different_pixels / weighted_total) * 100
     
     # Apply sensitivity curve (much less sensitive than ModelB)
     # 0-40%: slight amplification
@@ -206,6 +218,7 @@ def modelC_comparison(latest_image, median_image, latest_image_key, median_image
         'difference_percentage': round(final_difference_percentage, 2),
         'total_pixels': int(total_pixels),
         'different_pixels': int(different_pixels),
+        'weighted_different_pixels': round(weighted_different_pixels, 2),
         'raw_difference_percentage': round(raw_difference_percentage, 2),
         'adjusted_difference_percentage': round(adjusted_percentage, 2),
         'has_mail': bool(has_mail),
