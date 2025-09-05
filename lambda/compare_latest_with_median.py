@@ -56,7 +56,8 @@ def modelA_comparison(latest_image, median_image, latest_image_key, median_image
 
 def modelB_comparison(latest_image, median_image, latest_image_key, median_image_key):
     """
-    Model B: Same comparison as ModelA but with cubic sensitivity curve
+    Model B: Same comparison as ModelA but with power curve below linear
+    Formula: result = 100 × (raw/100)^β where β = 2.0
     """
     # Convert to grayscale if not already
     if latest_image.mode != 'L':
@@ -82,9 +83,11 @@ def modelB_comparison(latest_image, median_image, latest_image_key, median_image
     different_pixels = np.sum(diff_array > 10)  # Threshold of 10 for significant difference
     raw_difference_percentage = (different_pixels / total_pixels) * 100
     
-    # Apply cubic sensitivity curve: result = raw³ / 10000
-    # This creates a curve that's very gentle at low values and extremely steep at high values
-    adjusted_difference_percentage = (raw_difference_percentage ** 3) / 10000
+    # Apply power curve below linear: result = 100 × (raw/100)^β
+    # β = 2.0 creates a curve that's below the linear line
+    beta = 2.0
+    r = raw_difference_percentage / 100.0
+    adjusted_difference_percentage = 100.0 * (r ** beta)
     
     # Determine if there's mail (threshold: 25%)
     has_mail = adjusted_difference_percentage > 25
@@ -98,14 +101,18 @@ def modelB_comparison(latest_image, median_image, latest_image_key, median_image
         'has_mail': bool(has_mail),
         'threshold': 25.0,
         'image_size': target_size,
-        'method': 'pixel_difference_grayscale_with_cubic_curve',
-        'sensitivity_formula': 'raw³ / 10000'
+        'method': 'pixel_difference_grayscale_with_power_curve',
+        'sensitivity_beta': beta,
+        'sensitivity_formula': '100 × (raw/100)^β'
     }
+    
 
 def modelC_comparison(latest_image, median_image, latest_image_key, median_image_key):
     """
-    Model C: No cropping. Same comparison grid as ModelA/B (1024x576),
-    applies Gaussian horizontal weighting and Model C sensitivity curve.
+    Model C: Same pipeline as ModelB (grayscale + 1024x576 + pixel difference)
+    but with an inverted (concave-up) sensitivity curve vs linear:
+      result = 100 * (1 - (1 - raw/100)^alpha)
+    This yields higher sensitivity at low raw %, and lower sensitivity at high raw %.
     """
     # Convert to grayscale if not already (same as ModelA/B)
     if latest_image.mode != 'L':
@@ -126,40 +133,15 @@ def modelC_comparison(latest_image, median_image, latest_image_key, median_image
     logger.info("ModelC: Calculating pixel differences (no cropping)")
     diff_array = np.abs(latest_array - median_array)
     
-    # Calculate percentage difference with horizontal weighting (Super-Gaussian)
-    # - Center emphasis: 150% (2.5× multiplier at center)
-    # - Curve width: 20.5% of width (sigma)
-    # - Steepness exponent: 2.80 (p)
-    # - Smoothly tapers to ~0 at edges
+    # Calculate raw percentage difference (same as ModelB)
     total_pixels = latest_array.size
-    binary_mask = (diff_array > 10)
-    different_pixels = int(np.sum(binary_mask))  # unweighted count for reference/metrics
-
-    height, width = latest_array.shape
-    center_x = (width - 1) / 2.0
-    # weights_row shape: (width,)
-    # Super-Gaussian weights: 2.5 * exp(-0.5 * ((x - center)/sigma)^p)
-    x = np.arange(width, dtype=np.float32)
-    sigma = max((20.5 / 100.0) * width, 1.0)  # 20.5% of width
-    p = 2.80  # steepness exponent
-    boost = 2.5  # center multiplier (150% emphasis)
-    weights_row = boost * np.exp(-0.5 * ((np.abs(x - center_x) / sigma) ** p))
-    # Broadcast to full image and compute weighted sum of differing pixels
-    weighted_different_pixels = float((binary_mask.astype(np.float32) * weights_row[None, :]).sum())
-    weighted_total = float(weights_row.sum() * height)
-    raw_difference_percentage = (weighted_different_pixels / weighted_total) * 100
+    different_pixels = int(np.sum(diff_array > 10))
+    raw_difference_percentage = (different_pixels / total_pixels) * 100.0
     
-    # Apply sensitivity curve (much less sensitive than ModelB)
-    # 0-40%: slight amplification
-    # 40-100%: significant dampening
-    if raw_difference_percentage <= 40:
-        # Slight amplification: multiply by 1.05 (max 40% becomes 42%)
-        adjusted_percentage = raw_difference_percentage * 1.05
-    else:
-        # Significant dampening: use a curve that approaches 30% asymptotically
-        # Formula: 42 + (raw - 40) * 0.05
-        # This ensures 40% -> 42%, 100% -> 30%
-        adjusted_percentage = 42 + (raw_difference_percentage - 40) * 0.05
+    # Inverted sensitivity vs linear (concave-up):
+    # result = 100 * (1 - (1 - raw/100)^alpha)
+    alpha = 2.5  # steepness parameter (matches visualization default)
+    adjusted_percentage = 100.0 * (1.0 - ((1.0 - (raw_difference_percentage / 100.0)) ** alpha))
     
     # Ensure we never exceed 100%
     final_difference_percentage = min(adjusted_percentage, 100.0)
@@ -175,7 +157,9 @@ def modelC_comparison(latest_image, median_image, latest_image_key, median_image
         'has_mail': bool(has_mail),
         'threshold': 50.0,
         'image_size': target_size,
-        'method': 'pixel_difference_grayscale_with_gaussian_horizontal_weighting'
+        'method': 'pixel_difference_grayscale_with_inverted_sensitivity',
+        'sensitivity_alpha': alpha,
+        'sensitivity_formula': '100 * (1 - (1 - raw/100)^alpha)'
     }
 
 def run_comparison_model(model_name, latest_image, median_image, latest_image_key, median_image_key):
