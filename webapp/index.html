@@ -631,7 +631,10 @@
                     <button id="move-with-mail" class="btn" onclick="moveSelectedImages('ai-training-data/with-mail')">With Mail</button>
                     <button id="move-without-mail" class="btn" onclick="moveSelectedImages('ai-training-data/without-mail')">Without Mail</button>
                 </div>
-                <button class="btn btn-danger" onclick="clearSelection()">Clear Selection</button>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button class="btn btn-danger" onclick="deleteSelectedImages()">Delete Selected</button>
+                    <button class="btn" onclick="clearSelection()">Clear Selection</button>
+                </div>
             </div>
         </div>
 
@@ -1483,6 +1486,55 @@
             } finally {
                 // Remove loading overlay
                 document.body.removeChild(loadingDiv);
+            }
+        }
+
+        async function deleteSelectedImages() {
+            if (selectedImages.size === 0 || !currentFolder) return;
+            const confirmed = confirm(`Permanently delete ${selectedImages.size} original JPG file(s)? Thumbnails will remain.`);
+            if (!confirmed) return;
+
+            const moveActions = document.getElementById('move-actions');
+            moveActions.style.display = 'none';
+
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading-overlay';
+            loadingDiv.innerHTML = `
+                <div class="loading-content">
+                    <div class="spinner"></div>
+                    <p>Deleting ${selectedImages.size} image${selectedImages.size > 1 ? 's' : ''}...</p>
+                </div>
+            `;
+            document.body.appendChild(loadingDiv);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/delete-images`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ imageKeys: Array.from(selectedImages) })
+                });
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const result = await response.json();
+
+                clearSelection();
+
+                if (currentFolder === 'usortert') {
+                    await loadImages('usortert', 'usortert-gallery');
+                } else if (currentFolder === 'ai-training-data/with-mail') {
+                    await loadImages('ai-training-data/with-mail', 'with-mail-gallery');
+                } else if (currentFolder === 'ai-training-data/without-mail') {
+                    await loadImages('ai-training-data/without-mail', 'without-mail-gallery');
+                }
+                await loadStatistics();
+
+                const msg = result.success ? `Deleted ${result.deletedCount} image${result.deletedCount === 1 ? '' : 's'}` : 'Delete completed';
+                showNotification(msg, 'success');
+            } catch (error) {
+                console.error('Error deleting images:', error);
+                showNotification(`Error deleting images: ${error.message}`, 'error');
+                moveActions.style.display = 'block';
+            } finally {
+                if (document.body.contains(loadingDiv)) document.body.removeChild(loadingDiv);
             }
         }
 

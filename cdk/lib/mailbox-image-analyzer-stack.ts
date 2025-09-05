@@ -467,6 +467,19 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
     const listImagesIntegration = new apigateway.LambdaIntegration(listImagesFunction);
     const getStatsIntegration = new apigateway.LambdaIntegration(getStatsFunction);
     const moveImagesIntegration = new apigateway.LambdaIntegration(moveImagesFunction);
+    // Delete images lambda
+    const deleteImagesFunction = new lambda.Function(this, 'DeleteImagesFunction', {
+      runtime: lambda.Runtime.PYTHON_3_11,
+      handler: 'delete_images.handler',
+      code: lambda.Code.fromAsset('../lambda'),
+      timeout: cdk.Duration.minutes(2),
+      memorySize: 256,
+      environment: {
+        BUCKET_NAME: this.imageBucket.bucketName,
+      },
+    });
+    this.imageBucket.grantWrite(deleteImagesFunction);
+    const deleteImagesIntegration = new apigateway.LambdaIntegration(deleteImagesFunction);
     const getComparisonStatusIntegration = new apigateway.LambdaIntegration(getComparisonStatusFunction);
     const editStatisticsIntegration = new apigateway.LambdaIntegration(editStatisticsFunction);
     const triggerMedianImageIntegration = new apigateway.LambdaIntegration(triggerMedianImageFunction);
@@ -484,6 +497,9 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
     // Add move images endpoint
     const moveImagesResource = api.root.addResource('move-images');
     moveImagesResource.addMethod('POST', moveImagesIntegration);
+    // Add delete images endpoint
+    const deleteImagesResource = api.root.addResource('delete-images');
+    deleteImagesResource.addMethod('POST', deleteImagesIntegration);
 
     // Add comparison status endpoint
     const comparisonStatusResource = api.root.addResource('comparison-status');
