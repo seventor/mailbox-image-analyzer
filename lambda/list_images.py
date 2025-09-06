@@ -15,7 +15,18 @@ def handler(event, context):
         folder = query_params.get('folder', 'usortert')
         
         # Validate folder parameter
-        allowed_folders = ['usortert', 'ai-training-data/with-mail', 'ai-training-data/without-mail', 'uploads', 'median-image', 'status']
+        allowed_folders = [
+            'usortert', 
+            'ai-training-data/training/with-mail', 
+            'ai-training-data/training/without-mail',
+            'ai-training-data/evaluation/with-mail', 
+            'ai-training-data/evaluation/without-mail',
+            'ai-training-data/test/with-mail', 
+            'ai-training-data/test/without-mail',
+            'uploads', 
+            'median-image', 
+            'status'
+        ]
         if folder not in allowed_folders:
             return {
                 'statusCode': 400,

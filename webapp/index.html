@@ -603,13 +603,29 @@
                 Usortert
                 <span class="count" id="usortert-count">0</span>
             </div>
-            <div class="nav-item" onclick="showTab('with-mail', event)" id="with-mail-nav">
-                With Mail
-                <span class="count" id="with-mail-count">0</span>
+            <div class="nav-item" onclick="showTab('training-with-mail', event)" id="training-with-mail-nav">
+                Training With Mail
+                <span class="count" id="training-with-mail-count">0</span>
             </div>
-            <div class="nav-item" onclick="showTab('without-mail', event)" id="without-mail-nav">
-                Without Mail
-                <span class="count" id="without-mail-count">0</span>
+            <div class="nav-item" onclick="showTab('training-without-mail', event)" id="training-without-mail-nav">
+                Training Without Mail
+                <span class="count" id="training-without-mail-count">0</span>
+            </div>
+            <div class="nav-item" onclick="showTab('evaluation-with-mail', event)" id="evaluation-with-mail-nav">
+                Evaluation With Mail
+                <span class="count" id="evaluation-with-mail-count">0</span>
+            </div>
+            <div class="nav-item" onclick="showTab('evaluation-without-mail', event)" id="evaluation-without-mail-nav">
+                Evaluation Without Mail
+                <span class="count" id="evaluation-without-mail-count">0</span>
+            </div>
+            <div class="nav-item" onclick="showTab('test-with-mail', event)" id="test-with-mail-nav">
+                Test With Mail
+                <span class="count" id="test-with-mail-count">0</span>
+            </div>
+            <div class="nav-item" onclick="showTab('test-without-mail', event)" id="test-without-mail-nav">
+                Test Without Mail
+                <span class="count" id="test-without-mail-count">0</span>
             </div>
         </div>
 
@@ -628,8 +644,33 @@
                 <div class="move-buttons">
                     <span class="move-label">Move to:</span>
                     <button id="move-usortert" class="btn" onclick="moveSelectedImages('usortert')">Usortert</button>
-                    <button id="move-with-mail" class="btn" onclick="moveSelectedImages('ai-training-data/with-mail')">With Mail</button>
-                    <button id="move-without-mail" class="btn" onclick="moveSelectedImages('ai-training-data/without-mail')">Without Mail</button>
+                    
+                    <!-- Training Section -->
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <span style="font-size: 11px; color: #6b7280; font-weight: 500;">Training:</span>
+                        <div style="display: flex; gap: 6px;">
+                            <button class="btn" onclick="moveSelectedImages('ai-training-data/training/with-mail')">With Mail</button>
+                            <button class="btn" onclick="moveSelectedImages('ai-training-data/training/without-mail')">Without Mail</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Evaluation Section -->
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <span style="font-size: 11px; color: #6b7280; font-weight: 500;">Evaluation:</span>
+                        <div style="display: flex; gap: 6px;">
+                            <button class="btn" onclick="moveSelectedImages('ai-training-data/evaluation/with-mail')">With Mail</button>
+                            <button class="btn" onclick="moveSelectedImages('ai-training-data/evaluation/without-mail')">Without Mail</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Test Section -->
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <span style="font-size: 11px; color: #6b7280; font-weight: 500;">Test:</span>
+                        <div style="display: flex; gap: 6px;">
+                            <button class="btn" onclick="moveSelectedImages('ai-training-data/test/with-mail')">With Mail</button>
+                            <button class="btn" onclick="moveSelectedImages('ai-training-data/test/without-mail')">Without Mail</button>
+                        </div>
+                    </div>
                 </div>
                 <div style="display:flex; gap:8px; align-items:center;">
                     <button class="btn btn-danger" onclick="deleteSelectedImages()">Delete Selected</button>
@@ -691,27 +732,81 @@
                 <div class="gallery-header">
                     <h2 class="gallery-title">📁 Usortert Images</h2>
                 </div>
+                
+                <!-- Distribution Chart -->
+                <div class="chart-container" style="margin: 20px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <h3 style="margin-bottom: 20px; color: #374151; font-size: 16px;">📊 AI Training Data Distribution</h3>
+                    <div style="position: relative; height: 400px;">
+                        <canvas id="distributionChart"></canvas>
+                    </div>
+                    <div style="margin-top: 15px; font-size: 12px; color: #6b7280;">
+                        <strong>Target Distribution:</strong> Training 4/7 (57.1%), Evaluation 2/7 (28.6%), Test 1/7 (14.3%)<br>
+                        Each category should be 50% with-mail, 50% without-mail<br>
+                        <strong>Chart shows:</strong> Percentage of target goal achieved (100% = target reached)
+                    </div>
+                </div>
+                
                 <div class="gallery" id="usortert-gallery">
                     <div class="loading">Loading images...</div>
                 </div>
             </div>
             
-            <!-- With Mail Tab -->
-            <div id="with-mail-tab" class="tab-content">
+            <!-- Training With Mail Tab -->
+            <div id="training-with-mail-tab" class="tab-content">
                 <div class="gallery-header">
-                    <h2 class="gallery-title">📬 With Mail Images</h2>
+                    <h2 class="gallery-title">📬 Training With Mail Images</h2>
                 </div>
-                <div class="gallery" id="with-mail-gallery">
+                <div class="gallery" id="training-with-mail-gallery">
                     <div class="loading">Loading images...</div>
                 </div>
             </div>
             
-            <!-- Without Mail Tab -->
-            <div id="without-mail-tab" class="tab-content">
+            <!-- Training Without Mail Tab -->
+            <div id="training-without-mail-tab" class="tab-content">
                 <div class="gallery-header">
-                    <h2 class="gallery-title">📭 Without Mail Images</h2>
+                    <h2 class="gallery-title">📭 Training Without Mail Images</h2>
                 </div>
-                <div class="gallery" id="without-mail-gallery">
+                <div class="gallery" id="training-without-mail-gallery">
+                    <div class="loading">Loading images...</div>
+                </div>
+            </div>
+            
+            <!-- Evaluation With Mail Tab -->
+            <div id="evaluation-with-mail-tab" class="tab-content">
+                <div class="gallery-header">
+                    <h2 class="gallery-title">📬 Evaluation With Mail Images</h2>
+                </div>
+                <div class="gallery" id="evaluation-with-mail-gallery">
+                    <div class="loading">Loading images...</div>
+                </div>
+            </div>
+            
+            <!-- Evaluation Without Mail Tab -->
+            <div id="evaluation-without-mail-tab" class="tab-content">
+                <div class="gallery-header">
+                    <h2 class="gallery-title">📭 Evaluation Without Mail Images</h2>
+                </div>
+                <div class="gallery" id="evaluation-without-mail-gallery">
+                    <div class="loading">Loading images...</div>
+                </div>
+            </div>
+            
+            <!-- Test With Mail Tab -->
+            <div id="test-with-mail-tab" class="tab-content">
+                <div class="gallery-header">
+                    <h2 class="gallery-title">📬 Test With Mail Images</h2>
+                </div>
+                <div class="gallery" id="test-with-mail-gallery">
+                    <div class="loading">Loading images...</div>
+                </div>
+            </div>
+            
+            <!-- Test Without Mail Tab -->
+            <div id="test-without-mail-tab" class="tab-content">
+                <div class="gallery-header">
+                    <h2 class="gallery-title">📭 Test Without Mail Images</h2>
+                </div>
+                <div class="gallery" id="test-without-mail-gallery">
                     <div class="loading">Loading images...</div>
                 </div>
             </div>
@@ -822,16 +917,38 @@
                 headerActions.style.display = 'block';
                 currentFolder = 'usortert';
                 loadImages('usortert', 'usortert-gallery');
-            } else if (tabName === 'with-mail') {
-                pageTitle.textContent = 'With Mail Images';
+                // Create distribution chart for Usortert page
+                setTimeout(() => createDistributionChart(), 100);
+            } else if (tabName === 'training-with-mail') {
+                pageTitle.textContent = 'Training With Mail Images';
                 headerActions.style.display = 'block';
-                currentFolder = 'ai-training-data/with-mail';
-                loadImages('ai-training-data/with-mail', 'with-mail-gallery');
-            } else if (tabName === 'without-mail') {
-                pageTitle.textContent = 'Without Mail Images';
+                currentFolder = 'ai-training-data/training/with-mail';
+                loadImages('ai-training-data/training/with-mail', 'training-with-mail-gallery');
+            } else if (tabName === 'training-without-mail') {
+                pageTitle.textContent = 'Training Without Mail Images';
                 headerActions.style.display = 'block';
-                currentFolder = 'ai-training-data/without-mail';
-                loadImages('ai-training-data/without-mail', 'without-mail-gallery');
+                currentFolder = 'ai-training-data/training/without-mail';
+                loadImages('ai-training-data/training/without-mail', 'training-without-mail-gallery');
+            } else if (tabName === 'evaluation-with-mail') {
+                pageTitle.textContent = 'Evaluation With Mail Images';
+                headerActions.style.display = 'block';
+                currentFolder = 'ai-training-data/evaluation/with-mail';
+                loadImages('ai-training-data/evaluation/with-mail', 'evaluation-with-mail-gallery');
+            } else if (tabName === 'evaluation-without-mail') {
+                pageTitle.textContent = 'Evaluation Without Mail Images';
+                headerActions.style.display = 'block';
+                currentFolder = 'ai-training-data/evaluation/without-mail';
+                loadImages('ai-training-data/evaluation/without-mail', 'evaluation-without-mail-gallery');
+            } else if (tabName === 'test-with-mail') {
+                pageTitle.textContent = 'Test With Mail Images';
+                headerActions.style.display = 'block';
+                currentFolder = 'ai-training-data/test/with-mail';
+                loadImages('ai-training-data/test/with-mail', 'test-with-mail-gallery');
+            } else if (tabName === 'test-without-mail') {
+                pageTitle.textContent = 'Test Without Mail Images';
+                headerActions.style.display = 'block';
+                currentFolder = 'ai-training-data/test/without-mail';
+                loadImages('ai-training-data/test/without-mail', 'test-without-mail-gallery');
             } else {
                 currentFolder = '';
             }
@@ -850,23 +967,195 @@
                 
                 // Update nav counts
                 const usortertCount = data.stats['usortert'] || 0;
-                const withMailCount = data.stats['ai-training-data/with-mail'] || 0;
-                const withoutMailCount = data.stats['ai-training-data/without-mail'] || 0;
+                const trainingWithMailCount = data.stats['ai-training-data/training/with-mail'] || 0;
+                const trainingWithoutMailCount = data.stats['ai-training-data/training/without-mail'] || 0;
+                const evaluationWithMailCount = data.stats['ai-training-data/evaluation/with-mail'] || 0;
+                const evaluationWithoutMailCount = data.stats['ai-training-data/evaluation/without-mail'] || 0;
+                const testWithMailCount = data.stats['ai-training-data/test/with-mail'] || 0;
+                const testWithoutMailCount = data.stats['ai-training-data/test/without-mail'] || 0;
                 
                 document.getElementById('usortert-count').textContent = usortertCount;
-                document.getElementById('with-mail-count').textContent = withMailCount;
-                document.getElementById('without-mail-count').textContent = withoutMailCount;
+                document.getElementById('training-with-mail-count').textContent = trainingWithMailCount;
+                document.getElementById('training-without-mail-count').textContent = trainingWithoutMailCount;
+                document.getElementById('evaluation-with-mail-count').textContent = evaluationWithMailCount;
+                document.getElementById('evaluation-without-mail-count').textContent = evaluationWithoutMailCount;
+                document.getElementById('test-with-mail-count').textContent = testWithMailCount;
+                document.getElementById('test-without-mail-count').textContent = testWithoutMailCount;
+                
+                // Update distribution chart if it exists
+                await updateDistributionChart();
                 
             } catch (error) {
                 console.error('Error loading statistics:', error);
             }
         }
 
+        // Distribution chart for Usortert page
+        let distributionChart = null;
+
+        async function createDistributionChart() {
+            const ctx = document.getElementById('distributionChart');
+            if (!ctx) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/stats`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                // Calculate totals and percentages
+                const stats = data.stats;
+                const trainingWithMail = stats['ai-training-data/training/with-mail'] || 0;
+                const trainingWithoutMail = stats['ai-training-data/training/without-mail'] || 0;
+                const evaluationWithMail = stats['ai-training-data/evaluation/with-mail'] || 0;
+                const evaluationWithoutMail = stats['ai-training-data/evaluation/without-mail'] || 0;
+                const testWithMail = stats['ai-training-data/test/with-mail'] || 0;
+                const testWithoutMail = stats['ai-training-data/test/without-mail'] || 0;
+                
+                const totalImages = trainingWithMail + trainingWithoutMail + evaluationWithMail + evaluationWithoutMail + testWithMail + testWithoutMail;
+                
+                if (totalImages === 0) {
+                    ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
+                    return;
+                }
+                
+                // Calculate target goals for each category
+                const targetTrainingTotal = Math.round(totalImages * (4/7));
+                const targetEvaluationTotal = Math.round(totalImages * (2/7));
+                const targetTestTotal = Math.round(totalImages * (1/7));
+                
+                // Target for each subcategory (50% of each main category)
+                const targetTrainingWithMail = Math.round(targetTrainingTotal * 0.5);
+                const targetTrainingWithoutMail = targetTrainingTotal - targetTrainingWithMail;
+                const targetEvaluationWithMail = Math.round(targetEvaluationTotal * 0.5);
+                const targetEvaluationWithoutMail = targetEvaluationTotal - targetEvaluationWithMail;
+                const targetTestWithMail = Math.round(targetTestTotal * 0.5);
+                const targetTestWithoutMail = targetTestTotal - targetTestWithMail;
+                
+                // Calculate percentage of target achieved for each category
+                const trainingWithMailPercent = targetTrainingWithMail > 0 ? (trainingWithMail / targetTrainingWithMail) * 100 : 0;
+                const trainingWithoutMailPercent = targetTrainingWithoutMail > 0 ? (trainingWithoutMail / targetTrainingWithoutMail) * 100 : 0;
+                const evaluationWithMailPercent = targetEvaluationWithMail > 0 ? (evaluationWithMail / targetEvaluationWithMail) * 100 : 0;
+                const evaluationWithoutMailPercent = targetEvaluationWithoutMail > 0 ? (evaluationWithoutMail / targetEvaluationWithoutMail) * 100 : 0;
+                const testWithMailPercent = targetTestWithMail > 0 ? (testWithMail / targetTestWithMail) * 100 : 0;
+                const testWithoutMailPercent = targetTestWithoutMail > 0 ? (testWithoutMail / targetTestWithoutMail) * 100 : 0;
+                
+                // Create chart data
+                const chartData = {
+                    labels: [
+                        'Training With Mail',
+                        'Training Without Mail', 
+                        'Evaluation With Mail',
+                        'Evaluation Without Mail',
+                        'Test With Mail',
+                        'Test Without Mail'
+                    ],
+                    datasets: [
+                        {
+                            label: 'Current %',
+                            data: [
+                                trainingWithMailPercent,
+                                trainingWithoutMailPercent,
+                                evaluationWithMailPercent,
+                                evaluationWithoutMailPercent,
+                                testWithMailPercent,
+                                testWithoutMailPercent
+                            ],
+                            backgroundColor: [
+                                'rgba(34, 197, 94, 0.7)',   // Training With Mail - green
+                                'rgba(34, 197, 94, 0.4)',   // Training Without Mail - light green
+                                'rgba(59, 130, 246, 0.7)',  // Evaluation With Mail - blue
+                                'rgba(59, 130, 246, 0.4)',  // Evaluation Without Mail - light blue
+                                'rgba(168, 85, 247, 0.7)',  // Test With Mail - purple
+                                'rgba(168, 85, 247, 0.4)'   // Test Without Mail - light purple
+                            ],
+                            borderColor: [
+                                'rgba(34, 197, 94, 1)',
+                                'rgba(34, 197, 94, 1)',
+                                'rgba(59, 130, 246, 1)',
+                                'rgba(59, 130, 246, 1)',
+                                'rgba(168, 85, 247, 1)',
+                                'rgba(168, 85, 247, 1)'
+                            ],
+                            borderWidth: 1
+                        }
+                    ]
+                };
+                
+                const config = {
+                    type: 'bar',
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Progress Towards Target Distribution (100% = Target Goal)',
+                                font: { size: 14, weight: 'bold' }
+                            },
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                title: {
+                                    display: true,
+                                    text: 'Percentage (%)'
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Categories'
+                                }
+                            }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        }
+                    }
+                };
+                
+                // Destroy existing chart if it exists
+                if (distributionChart) {
+                    distributionChart.destroy();
+                }
+                
+                // Create new chart
+                distributionChart = new Chart(ctx, config);
+                
+            } catch (error) {
+                console.error('Error creating distribution chart:', error);
+            }
+        }
+
+        async function updateDistributionChart() {
+            if (distributionChart) {
+                await createDistributionChart();
+            }
+        }
+
         async function loadImagesForAllTabs() {
             // Load images for all tabs
             await loadImages('usortert', 'usortert-gallery');
-            await loadImages('ai-training-data/with-mail', 'with-mail-gallery');
-            await loadImages('ai-training-data/without-mail', 'without-mail-gallery');
+            await loadImages('ai-training-data/training/with-mail', 'training-with-mail-gallery');
+            await loadImages('ai-training-data/training/without-mail', 'training-without-mail-gallery');
+            await loadImages('ai-training-data/evaluation/with-mail', 'evaluation-with-mail-gallery');
+            await loadImages('ai-training-data/evaluation/without-mail', 'evaluation-without-mail-gallery');
+            await loadImages('ai-training-data/test/with-mail', 'test-with-mail-gallery');
+            await loadImages('ai-training-data/test/without-mail', 'test-without-mail-gallery');
         }
 
         async function loadImages(folder, galleryId) {

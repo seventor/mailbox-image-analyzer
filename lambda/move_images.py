@@ -51,7 +51,15 @@ def handler(event, context):
             }
         
         # Validate folder names
-        allowed_folders = ['usortert', 'ai-training-data/with-mail', 'ai-training-data/without-mail']
+        allowed_folders = [
+            'usortert', 
+            'ai-training-data/training/with-mail', 
+            'ai-training-data/training/without-mail',
+            'ai-training-data/evaluation/with-mail', 
+            'ai-training-data/evaluation/without-mail',
+            'ai-training-data/test/with-mail', 
+            'ai-training-data/test/without-mail'
+        ]
         if source_folder not in allowed_folders or target_folder not in allowed_folders:
             return {
                 'statusCode': 400,
@@ -63,7 +71,7 @@ def handler(event, context):
                 },
                 'body': json.dumps({
                     'success': False,
-                    'error': 'Invalid folder names. Allowed: usortert, ai-training-data/with-mail, ai-training-data/without-mail'
+                    'error': 'Invalid folder names. Allowed: usortert, ai-training-data/training/with-mail, ai-training-data/training/without-mail, ai-training-data/evaluation/with-mail, ai-training-data/evaluation/without-mail, ai-training-data/test/with-mail, ai-training-data/test/without-mail'
                 })
             }
         

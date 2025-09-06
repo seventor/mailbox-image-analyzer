@@ -20,7 +20,7 @@ def handler(event, context):
     
     try:
         bucket_name = os.environ.get('BUCKET_NAME', 'mailbox-image-analyzer-dev')
-        source_folder = 'ai-training-data/without-mail'
+        source_folder = 'ai-training-data/evaluation/without-mail'
         target_folder = 'median-image'
         target_filename = 'median.jpg'
         num_images = 189

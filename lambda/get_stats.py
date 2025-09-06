@@ -10,7 +10,15 @@ def handler(event, context):
         bucket_name = os.environ['BUCKET_NAME']
         
         # Folders to check
-        folders = ['usortert', 'ai-training-data/with-mail', 'ai-training-data/without-mail']
+        folders = [
+            'usortert', 
+            'ai-training-data/training/with-mail', 
+            'ai-training-data/training/without-mail',
+            'ai-training-data/evaluation/with-mail', 
+            'ai-training-data/evaluation/without-mail',
+            'ai-training-data/test/with-mail', 
+            'ai-training-data/test/without-mail'
+        ]
         stats = {}
         
         for folder in folders:
