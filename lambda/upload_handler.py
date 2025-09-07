@@ -4,6 +4,8 @@ import base64
 import os
 import logging
 from datetime import datetime
+from PIL import Image
+import io
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -34,6 +36,33 @@ def handler(event, context):
             else:
                 image_bytes = body
                 logger.info(f"Using raw body, size: {len(image_bytes)} bytes")
+        
+        # Crop the upper 35px from the image
+        logger.info("Starting image cropping - removing upper 35px")
+        try:
+            # Open image from bytes
+            image = Image.open(io.BytesIO(image_bytes))
+            logger.info(f"Original image size: {image.size}")
+            
+            # Get image dimensions
+            width, height = image.size
+            
+            # Crop: remove upper 35px (crop from (0,35) to (width, height))
+            if height > 35:
+                cropped_image = image.crop((0, 35, width, height))
+                logger.info(f"Cropped image size: {cropped_image.size}")
+                
+                # Convert back to bytes
+                output_buffer = io.BytesIO()
+                cropped_image.save(output_buffer, format='JPEG', quality=95)
+                image_bytes = output_buffer.getvalue()
+                logger.info(f"Cropped image size: {len(image_bytes)} bytes")
+            else:
+                logger.warning(f"Image height ({height}px) is less than or equal to crop amount (35px), skipping crop")
+                
+        except Exception as crop_error:
+            logger.error(f"Error during cropping: {str(crop_error)}")
+            logger.info("Continuing with original image without cropping")
         
         # Upload to S3 in the uploads folder
         logger.info(f"Uploading to S3: {bucket_name}/uploads/latest.jpg")

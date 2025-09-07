@@ -155,6 +155,13 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
 
 
 
+    // Create Lambda layer for Pillow
+    const pillowLayer = new lambda.LayerVersion(this, 'PillowLayer', {
+      code: lambda.Code.fromAsset('../lambda/pillow-layer'),
+      compatibleRuntimes: [lambda.Runtime.PYTHON_3_11],
+      description: 'Pillow library for image processing',
+    });
+
     // Create Lambda function for handling uploads
     const uploadFunction = new lambda.Function(this, 'UploadFunction', {
       runtime: lambda.Runtime.PYTHON_3_11,
@@ -162,6 +169,7 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       code: lambda.Code.fromAsset('../lambda'),
       timeout: cdk.Duration.minutes(1),
       memorySize: 256,
+      layers: [pillowLayer],
       environment: {
         BUCKET_NAME: this.imageBucket.bucketName,
       },
@@ -169,13 +177,6 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
 
     // Grant S3 write permissions to upload function
     this.imageBucket.grantWrite(uploadFunction);
-
-    // Create Lambda layer for Pillow
-    const pillowLayer = new lambda.LayerVersion(this, 'PillowLayer', {
-      code: lambda.Code.fromAsset('../lambda/pillow-layer'),
-      compatibleRuntimes: [lambda.Runtime.PYTHON_3_11],
-      description: 'Pillow library for image processing',
-    });
 
     // Create common utils layer (thumbnail_utils)
     const commonUtilsLayer = new lambda.LayerVersion(this, 'CommonUtilsLayer', {

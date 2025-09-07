@@ -10,12 +10,20 @@ s3_client = boto3.client('s3')
 
 def handler(event, context):
     try:
-        print("=== THUMBNAIL SYNC FUNCTION STARTED ===")
+        print("=== THUMBNAIL SYNC FUNCTION STARTED (UPDATED) ===")
         # Get bucket name from environment variable
         bucket_name = os.environ['BUCKET_NAME']
         
         # Source folders to check for images
-        source_folders = ['usortert', 'ai-training-data/with-mail', 'ai-training-data/without-mail']
+        source_folders = [
+            'usortert', 
+            'ai-training-data/training/with-mail', 
+            'ai-training-data/training/without-mail',
+            'ai-training-data/evaluation/with-mail', 
+            'ai-training-data/evaluation/without-mail',
+            'ai-training-data/test/with-mail', 
+            'ai-training-data/test/without-mail'
+        ]
         
         # Get all images from source folders
         source_images = {}
