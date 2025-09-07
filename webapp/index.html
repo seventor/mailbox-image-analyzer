@@ -1212,9 +1212,11 @@
                     toggleImageSelection(image.original, imageCard);
                 };
                 
-                const imageSrc = image.thumbnail ? 
+                // Force thumbnail usage for all ai-training-data folders
+                const isAiTrainingData = currentFolder && currentFolder.startsWith('ai-training-data/');
+                const imageSrc = (image.thumbnail && isAiTrainingData) ? 
                     `${CLOUDFRONT_URL}/${image.thumbnail}` : 
-                    `${CLOUDFRONT_URL}/${image.original}`;
+                    (image.thumbnail ? `${CLOUDFRONT_URL}/${image.thumbnail}` : `${CLOUDFRONT_URL}/${image.original}`);
                 
                 imageCard.innerHTML = `
                     <img src="${imageSrc}" 
