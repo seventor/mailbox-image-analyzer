@@ -18,7 +18,7 @@ def handler(event, context):
         model_name = query_params.get('model', '').lower()
         
         # Validate model parameter
-        allowed_models = ['modela', 'modelb', 'modelc']
+        allowed_models = ['modela', 'modelb', 'modelc', 'modeld']
         if model_name not in allowed_models:
             return {
                 'statusCode': 400,
@@ -28,7 +28,7 @@ def handler(event, context):
                     'Access-Control-Allow-Headers': 'Content-Type',
                     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS'
                 },
-                'body': json.dumps({'error': 'Invalid model parameter. Must be "modela", "modelb", or "modelc"'})
+                'body': json.dumps({'error': 'Invalid model parameter. Must be "modela", "modelb", "modelc", or "modeld"'})
             }
         
         # Construct the statistics file key
