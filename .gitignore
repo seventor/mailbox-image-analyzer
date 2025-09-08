@@ -43,3 +43,12 @@ logs/
 *.tmp
 *.temp
 response.json
+# CDK Build Artifacts
+cdk/cdk.out/
+cdk/node_modules/
+
+# Lambda Layer Build Artifacts  
+lambda/*-layer/
+lambda/common-layer/
+lambda/numpy-layer/
+lambda/pillow-layer/
