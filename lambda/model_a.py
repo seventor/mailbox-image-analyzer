@@ -12,96 +12,29 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 s3_client = boto3.client('s3')
 
-def calculate_brightness(image):
+def modelA_comparison(latest_image, median_image, latest_image_key, median_image_key, bucket_name):
     """
-    Calculate the overall brightness of an image
-    Returns the mean brightness value (0-255)
+    Model A: Simple pixel-based difference comparison with yellow pixel visualization
     """
+    logger.info("ModelA: Starting pixel-based comparison")
+    
     # Convert to grayscale if not already
-    if image.mode != 'L':
-        gray_image = image.convert('L')
-    else:
-        gray_image = image
-    
-    # Convert to numpy array and calculate mean
-    gray_array = np.array(gray_image, dtype=np.float32)
-    brightness = np.mean(gray_array)
-    
-    return brightness
-
-def adjust_brightness(image, target_brightness):
-    """
-    Adjust the brightness of an image to match the target brightness
-    Returns a new PIL Image with adjusted brightness
-    """
-    # Convert to RGB if not already (needed for brightness adjustment)
-    if image.mode != 'RGB':
-        rgb_image = image.convert('RGB')
-    else:
-        rgb_image = image
-    
-    # Calculate current brightness
-    current_brightness = calculate_brightness(rgb_image)
-    
-    # Calculate brightness adjustment factor
-    if current_brightness > 0:
-        brightness_factor = target_brightness / current_brightness
-    else:
-        brightness_factor = 1.0
-    
-    logger.info(f"Brightness adjustment: current={current_brightness:.2f}, target={target_brightness:.2f}, factor={brightness_factor:.2f}")
-    
-    # Convert to numpy array for adjustment
-    rgb_array = np.array(rgb_image, dtype=np.float32)
-    
-    # Apply brightness adjustment
-    adjusted_array = rgb_array * brightness_factor
-    
-    # Clip values to valid range (0-255)
-    adjusted_array = np.clip(adjusted_array, 0, 255)
-    
-    # Convert back to PIL Image
-    adjusted_image = Image.fromarray(adjusted_array.astype(np.uint8))
-    
-    return adjusted_image
-
-def modelD_comparison(latest_image, median_image, latest_image_key, median_image_key, bucket_name):
-    """
-    Model D: Brightness-adjusted comparison
-    1. Calculate overall brightness of latest.jpg and median image
-    2. Adjust latest.jpg brightness to match median image brightness
-    3. Compare using same logic as Model A
-    4. Save the brightness-adjusted image to /status/modelD.jpg
-    """
-    logger.info("ModelD: Starting brightness-adjusted comparison")
-    
-    # Calculate brightness of both images
-    latest_brightness = calculate_brightness(latest_image)
-    median_brightness = calculate_brightness(median_image)
-    
-    logger.info(f"ModelD: Latest brightness={latest_brightness:.2f}, Median brightness={median_brightness:.2f}")
-    
-    # Adjust latest image brightness to match median brightness
-    adjusted_latest_image = adjust_brightness(latest_image, median_brightness)
-    
-    # Now perform comparison using Model A logic on the adjusted image
-    # Convert to grayscale if not already
-    if adjusted_latest_image.mode != 'L':
-        adjusted_latest_image = adjusted_latest_image.convert('L')
+    if latest_image.mode != 'L':
+        latest_image = latest_image.convert('L')
     if median_image.mode != 'L':
         median_image = median_image.convert('L')
     
     # Resize both images to same size for comparison
     target_size = (1024, 576)
-    adjusted_latest_image = adjusted_latest_image.resize(target_size, Image.Resampling.LANCZOS)
+    latest_image = latest_image.resize(target_size, Image.Resampling.LANCZOS)
     median_image = median_image.resize(target_size, Image.Resampling.LANCZOS)
     
     # Convert to numpy arrays
-    latest_array = np.array(adjusted_latest_image, dtype=np.float32)
+    latest_array = np.array(latest_image, dtype=np.float32)
     median_array = np.array(median_image, dtype=np.float32)
     
     # Calculate difference
-    logger.info("ModelD: Calculating pixel differences on brightness-adjusted image")
+    logger.info("ModelA: Calculating pixel differences")
     diff_array = np.abs(latest_array - median_array)
     
     # Calculate percentage difference
@@ -111,7 +44,7 @@ def modelD_comparison(latest_image, median_image, latest_image_key, median_image
     
     # Create visualization image with yellow pixels for differences
     # Convert grayscale back to RGB for yellow marking
-    visualization_image = adjusted_latest_image.convert('RGB')
+    visualization_image = latest_image.convert('RGB')
     vis_array = np.array(visualization_image)
     
     # Mark different pixels as pure yellow (255, 255, 0)
@@ -128,47 +61,42 @@ def modelD_comparison(latest_image, median_image, latest_image_key, median_image
         visualization_bytes = output_buffer.getvalue()
         
         # Save visualization to S3
-        modeld_image_key = 'status/modelD.jpg'
+        modela_image_key = 'status/modelA.jpg'
         s3_client.put_object(
             Bucket=bucket_name,
-            Key=modeld_image_key,
+            Key=modela_image_key,
             Body=visualization_bytes,
             ContentType='image/jpeg',
             Metadata={
                 'created_at': datetime.now(timezone.utc).isoformat(),
-                'model': 'ModelD',
-                'original_brightness': str(latest_brightness),
-                'target_brightness': str(median_brightness),
+                'model': 'ModelA',
                 'different_pixels': str(different_pixels),
                 'total_pixels': str(total_pixels)
             }
         )
-        logger.info(f"ModelD: Saved visualization image with yellow pixels to {modeld_image_key}")
+        logger.info(f"ModelA: Saved visualization image with yellow pixels to {modela_image_key}")
         
     except Exception as e:
-        logger.error(f"ModelD: Error saving visualization image: {str(e)}")
+        logger.error(f"ModelA: Error saving visualization image: {str(e)}")
     
-    # Determine if there's mail (threshold: 60% - same as Model A)
+    # Determine if there's mail (threshold: 60%)
     has_mail = difference_percentage > 60
     
     return {
-        'model_name': 'ModelD',
+        'model_name': 'ModelA',
         'difference_percentage': round(float(difference_percentage), 2),
         'total_pixels': int(total_pixels),
         'different_pixels': int(different_pixels),
         'has_mail': bool(has_mail),
         'threshold': 60.0,
         'image_size': target_size,
-        'method': 'brightness_adjusted_pixel_difference_grayscale',
-        'original_brightness': round(float(latest_brightness), 2),
-        'median_brightness': round(float(median_brightness), 2),
-        'brightness_adjustment_factor': round(float(median_brightness / latest_brightness), 2) if latest_brightness > 0 else 1.0,
-        'adjusted_image_saved': True
+        'method': 'pixel_difference_grayscale',
+        'visualization_saved': True
     }
 
-def save_modelD_result(bucket_name, comparison_result, latest_image_key, median_image_key):
+def save_modelA_result(bucket_name, comparison_result, latest_image_key, median_image_key):
     """
-    Save Model D comparison result to model-specific files
+    Save Model A comparison result to model-specific files
     """
     status_folder = 'status'
     timestamp = datetime.now(timezone.utc).isoformat()
@@ -181,8 +109,8 @@ def save_modelD_result(bucket_name, comparison_result, latest_image_key, median_
     })
     
     # Save latest comparison to model-specific file
-    latest_compare_key = f"{status_folder}/modeld.json"
-    logger.info(f"Saving latest ModelD comparison to {latest_compare_key}")
+    latest_compare_key = f"{status_folder}/modela.json"
+    logger.info(f"Saving latest ModelA comparison to {latest_compare_key}")
     s3_client.put_object(
         Bucket=bucket_name,
         Key=latest_compare_key,
@@ -191,12 +119,12 @@ def save_modelD_result(bucket_name, comparison_result, latest_image_key, median_
         Metadata={
             'created_at': timestamp,
             'difference_percentage': str(comparison_result['difference_percentage']),
-            'model_name': 'ModelD'
+            'model_name': 'ModelA'
         }
     )
     
     # Update statistics array in model-specific file
-    statistics_key = f"{status_folder}/statistics-modeld.json"
+    statistics_key = f"{status_folder}/statistics-modela.json"
     try:
         # Try to read existing statistics
         statistics_response = s3_client.get_object(Bucket=bucket_name, Key=statistics_key)
@@ -222,13 +150,13 @@ def save_modelD_result(bucket_name, comparison_result, latest_image_key, median_
     
     # Save updated statistics
     statistics_data = {
-        'model_name': 'ModelD',
+        'model_name': 'ModelA',
         'total_comparisons': len(comparisons),
         'last_updated': timestamp,
         'comparisons': comparisons
     }
     
-    logger.info(f"Saving updated ModelD statistics to {statistics_key}")
+    logger.info(f"Saving updated ModelA statistics to {statistics_key}")
     s3_client.put_object(
         Bucket=bucket_name,
         Key=statistics_key,
@@ -237,7 +165,7 @@ def save_modelD_result(bucket_name, comparison_result, latest_image_key, median_
         Metadata={
             'last_updated': timestamp,
             'total_comparisons': str(len(comparisons)),
-            'model_name': 'ModelD'
+            'model_name': 'ModelA'
         }
     )
     
