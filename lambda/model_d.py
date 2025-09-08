@@ -91,10 +91,14 @@ def modelD_comparison(latest_image, median_image, latest_image_key, median_image
     if median_image.mode != 'L':
         median_image = median_image.convert('L')
     
-    # Resize both images to same size for comparison
-    target_size = (1024, 576)
-    adjusted_latest_image = adjusted_latest_image.resize(target_size, Image.Resampling.LANCZOS)
-    median_image = median_image.resize(target_size, Image.Resampling.LANCZOS)
+    # Only resize adjusted latest image if it's different size than median image
+    if adjusted_latest_image.size != median_image.size:
+        logger.info(f"ModelD: Resizing adjusted latest image from {adjusted_latest_image.size} to {median_image.size}")
+        adjusted_latest_image = adjusted_latest_image.resize(median_image.size, Image.Resampling.LANCZOS)
+    else:
+        logger.info(f"ModelD: Images already same size: {adjusted_latest_image.size}")
+    
+    target_size = median_image.size
     
     # Convert to numpy arrays
     latest_array = np.array(adjusted_latest_image, dtype=np.float32)

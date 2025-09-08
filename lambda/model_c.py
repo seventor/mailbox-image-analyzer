@@ -14,9 +14,9 @@ s3_client = boto3.client('s3')
 
 def modelC_comparison(latest_image, median_image, latest_image_key, median_image_key, bucket_name):
     """
-    Model C: Inverted sensitivity curve comparison with yellow pixel visualization
+    Model C: Exactly like Model A but with threshold 30 instead of 10
     """
-    logger.info("ModelC: Starting inverted sensitivity curve comparison")
+    logger.info("ModelC: Starting pixel-based comparison with threshold 30")
     
     # Convert to grayscale if not already
     if latest_image.mode != 'L':
@@ -24,32 +24,27 @@ def modelC_comparison(latest_image, median_image, latest_image_key, median_image
     if median_image.mode != 'L':
         median_image = median_image.convert('L')
     
-    # Resize both images to same size for comparison
-    target_size = (1024, 576)
-    latest_image = latest_image.resize(target_size, Image.Resampling.LANCZOS)
-    median_image = median_image.resize(target_size, Image.Resampling.LANCZOS)
+    # Only resize latest image if it's different size than median image
+    if latest_image.size != median_image.size:
+        logger.info(f"ModelC: Resizing latest image from {latest_image.size} to {median_image.size}")
+        latest_image = latest_image.resize(median_image.size, Image.Resampling.LANCZOS)
+    else:
+        logger.info(f"ModelC: Images already same size: {latest_image.size}")
+    
+    target_size = median_image.size
     
     # Convert to numpy arrays
     latest_array = np.array(latest_image, dtype=np.float32)
     median_array = np.array(median_image, dtype=np.float32)
     
     # Calculate difference
-    logger.info("ModelC: Calculating pixel differences")
+    logger.info("ModelC: Calculating pixel differences with threshold 30")
     diff_array = np.abs(latest_array - median_array)
     
-    # Calculate percentage difference
+    # Calculate percentage difference with threshold 30
     total_pixels = latest_array.size
-    different_pixels = np.sum(diff_array > 10)  # Threshold of 10 for significant difference
+    different_pixels = np.sum(diff_array > 30)  # Threshold of 30 for significant difference
     difference_percentage = (different_pixels / total_pixels) * 100
-    
-    # Apply inverted sensitivity curve (α=2.5)
-    # More sensitive at lower raw %, less sensitive at higher raw %
-    alpha = 2.5
-    if difference_percentage > 0:
-        # Inverted curve: higher raw % gets lower adjusted %
-        adjusted_difference = difference_percentage * (1 - (difference_percentage / 100) ** alpha)
-    else:
-        adjusted_difference = 0
     
     # Create visualization image with yellow pixels for differences
     # Convert grayscale back to RGB for yellow marking
@@ -57,7 +52,7 @@ def modelC_comparison(latest_image, median_image, latest_image_key, median_image
     vis_array = np.array(visualization_image)
     
     # Mark different pixels as pure yellow (255, 255, 0)
-    diff_mask = diff_array > 10
+    diff_mask = diff_array > 30
     vis_array[diff_mask] = [255, 255, 0]  # Pure yellow
     
     # Convert back to PIL Image
@@ -88,23 +83,18 @@ def modelC_comparison(latest_image, median_image, latest_image_key, median_image
     except Exception as e:
         logger.error(f"ModelC: Error saving visualization image: {str(e)}")
     
-    # Determine if there's mail (threshold: 50%)
-    has_mail = adjusted_difference > 50
+    # Determine if there's mail (threshold: 60% - same as Model A)
+    has_mail = difference_percentage > 60
     
     return {
         'model_name': 'ModelC',
-        'difference_percentage': round(float(adjusted_difference), 2),
-        'raw_difference_percentage': round(float(difference_percentage), 2),
+        'difference_percentage': round(float(difference_percentage), 2),
         'total_pixels': int(total_pixels),
         'different_pixels': int(different_pixels),
         'has_mail': bool(has_mail),
-        'threshold': 50.0,
+        'threshold': 60.0,
         'image_size': target_size,
-        'method': 'inverted_sensitivity_curve',
-        'curve_parameters': {
-            'alpha': alpha,
-            'curve_type': 'inverted_power'
-        },
+        'method': 'pixel_difference_grayscale_threshold_30',
         'visualization_saved': True
     }
 

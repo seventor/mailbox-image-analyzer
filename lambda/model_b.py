@@ -24,10 +24,14 @@ def modelB_comparison(latest_image, median_image, latest_image_key, median_image
     if median_image.mode != 'L':
         median_image = median_image.convert('L')
     
-    # Resize both images to same size for comparison
-    target_size = (1024, 576)
-    latest_image = latest_image.resize(target_size, Image.Resampling.LANCZOS)
-    median_image = median_image.resize(target_size, Image.Resampling.LANCZOS)
+    # Only resize latest image if it's different size than median image
+    if latest_image.size != median_image.size:
+        logger.info(f"ModelB: Resizing latest image from {latest_image.size} to {median_image.size}")
+        latest_image = latest_image.resize(median_image.size, Image.Resampling.LANCZOS)
+    else:
+        logger.info(f"ModelB: Images already same size: {latest_image.size}")
+    
+    target_size = median_image.size
     
     # Convert to numpy arrays
     latest_array = np.array(latest_image, dtype=np.float32)
