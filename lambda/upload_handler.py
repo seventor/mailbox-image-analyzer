@@ -29,10 +29,17 @@ def handler(event, context):
             image_bytes = base64.b64decode(body)
             logger.info(f"Decoded base64 image, size: {len(image_bytes)} bytes")
         else:
-            # Raw binary data - convert to bytes if it's a string
+            # Raw binary data - handle properly
             if isinstance(body, str):
-                image_bytes = body.encode('latin-1')
-                logger.info(f"Converted string to bytes, size: {len(image_bytes)} bytes")
+                # If it's a string, it might be binary data that was incorrectly interpreted
+                # Try to handle it as binary data
+                try:
+                    image_bytes = body.encode('latin-1')
+                    logger.info(f"Converted string to bytes, size: {len(image_bytes)} bytes")
+                except UnicodeEncodeError:
+                    # If latin-1 encoding fails, treat as raw bytes
+                    image_bytes = body.encode('utf-8', errors='ignore')
+                    logger.info(f"Converted string to bytes with utf-8 fallback, size: {len(image_bytes)} bytes")
             else:
                 image_bytes = body
                 logger.info(f"Using raw body, size: {len(image_bytes)} bytes")

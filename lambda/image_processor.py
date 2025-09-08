@@ -22,7 +22,7 @@ def handler(event, context):
         timestamp = now.strftime('%Y-%m-%d-%H-%M')
         
         # Invoke comparison functions for all models asynchronously (always run, regardless of time)
-        models = ['ModelA', 'ModelB', 'ModelC']  # All available models
+        models = ['ModelA', 'ModelB', 'ModelC', 'ModelD']  # All available models including ModelD - Updated
         for model_name in models:
             try:
                 lambda_client.invoke(

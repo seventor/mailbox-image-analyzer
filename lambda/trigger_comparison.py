@@ -16,8 +16,8 @@ def handler(event, context):
         
         logger.info(f"Triggering comparison function: {function_name}")
         
-        # Run all three models: ModelA, ModelB, ModelC
-        models = ['ModelA', 'ModelB', 'ModelC']
+        # Run all four models: ModelA, ModelB, ModelC, ModelD
+        models = ['ModelA', 'ModelB', 'ModelC', 'ModelD']
         results = []
         
         for model_name in models:

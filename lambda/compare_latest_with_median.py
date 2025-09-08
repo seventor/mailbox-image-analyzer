@@ -7,6 +7,7 @@ import numpy as np
 from PIL import Image
 import io
 from botocore.exceptions import ClientError
+from model_d import modelD_comparison, save_modelD_result
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -162,7 +163,7 @@ def modelC_comparison(latest_image, median_image, latest_image_key, median_image
         'sensitivity_formula': '100 * (1 - (1 - raw/100)^alpha)'
     }
 
-def run_comparison_model(model_name, latest_image, median_image, latest_image_key, median_image_key):
+def run_comparison_model(model_name, latest_image, median_image, latest_image_key, median_image_key, bucket_name=None):
     """
     Run comparison using the specified model
     """
@@ -172,6 +173,10 @@ def run_comparison_model(model_name, latest_image, median_image, latest_image_ke
         return modelB_comparison(latest_image, median_image, latest_image_key, median_image_key)
     elif model_name == 'ModelC':
         return modelC_comparison(latest_image, median_image, latest_image_key, median_image_key)
+    elif model_name == 'ModelD':
+        if bucket_name is None:
+            raise ValueError("bucket_name is required for ModelD")
+        return modelD_comparison(latest_image, median_image, latest_image_key, median_image_key, bucket_name)
     else:
         raise ValueError(f"Unknown model: {model_name}")
 
@@ -179,6 +184,10 @@ def save_comparison_result(bucket_name, model_name, comparison_result, latest_im
     """
     Save comparison result to model-specific files
     """
+    # For ModelD, use the specialized save function
+    if model_name == 'ModelD':
+        return save_modelD_result(bucket_name, comparison_result, latest_image_key, median_image_key)
+    
     status_folder = 'status'
     timestamp = datetime.now(timezone.utc).isoformat()
     
@@ -310,7 +319,7 @@ def handler(event, context):
         median_image = Image.open(io.BytesIO(median_data))
         
         # Run comparison using specified model
-        comparison_result = run_comparison_model(model_name, latest_image, median_image, latest_image_key, median_image_key)
+        comparison_result = run_comparison_model(model_name, latest_image, median_image, latest_image_key, median_image_key, bucket_name)
         
         # Save results to model-specific files
         final_result = save_comparison_result(bucket_name, model_name, comparison_result, latest_image_key, median_image_key)

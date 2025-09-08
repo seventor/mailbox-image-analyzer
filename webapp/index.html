@@ -851,7 +851,7 @@
         let selectedImages = new Set();
         let currentFolder = '';
         let comparisonChart = null;
-        let allModels = ['ModelA', 'ModelB', 'ModelC'];  // All available models
+        let allModels = ['ModelA', 'ModelB', 'ModelC', 'ModelD'];  // All available models including ModelD
 
         // Initialize the app
         document.addEventListener('DOMContentLoaded', function() {
@@ -1394,8 +1394,20 @@
                                             <div>Pixel: ${comparison.analysis_breakdown.pixel_diff_percent}% | Edge: ${comparison.analysis_breakdown.edge_diff_percent}% | Color: ${comparison.analysis_breakdown.color_diff_percent}%</div>
                                         </div>
                                     ` : ''}
+                                    ${model === 'ModelD' ? `
+                                        <div style="margin-top: 4px; padding: 3px; background: #f3f4f6; border-radius: 3px; font-size: 9px;">
+                                            <div style="margin-bottom: 1px;"><strong>Brightness Adjustment:</strong></div>
+                                            <div>Original: ${comparison.original_brightness || 'N/A'} | Target: ${comparison.median_brightness || 'N/A'} | Factor: ${comparison.brightness_adjustment_factor || 'N/A'}</div>
+                                        </div>
+                                        <div style="margin-top: 4px;">
+                                            <img src="${CLOUDFRONT_URL}/status/modelD.jpg" 
+                                                 alt="ModelD Brightness-Adjusted Image" 
+                                                 style="width: 100%; max-width: 200px; border-radius: 3px; border: 1px solid #d1d5db;"
+                                                 onerror="this.style.display='none'">
+                                        </div>
+                                    ` : ''}
                                     <div style="margin-top: 4px;">
-                                        <a href="${CLOUDFRONT_URL}/status/${model.toLowerCase()}.json" 
+                                        <a href="${CLOUDFRONT_URL}/status/${model === 'ModelD' ? 'modeld' : model.toLowerCase()}.json" 
                                            target="_blank" 
                                            style="color: #7749f8; text-decoration: none; font-size: 9px;">
                                             📄 ${model} JSON
