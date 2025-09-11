@@ -152,8 +152,8 @@ def modelD_comparison(latest_image, median_image, latest_image_key, median_image
     except Exception as e:
         logger.error(f"ModelD: Error saving visualization image: {str(e)}")
     
-    # Determine if there's mail (threshold: 60% - same as Model A)
-    has_mail = difference_percentage > 60
+    # Determine if there's mail (threshold: 40%)
+    has_mail = difference_percentage > 40
     
     return {
         'model_name': 'ModelD',
@@ -221,8 +221,8 @@ def save_modelD_result(bucket_name, comparison_result, latest_image_key, median_
     comparisons.insert(0, comparison_result)
     
     # Keep only comparisons from the last 60 days to prevent file from growing too large
-    sixty_days_ago = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    sixty_days_ago = sixty_days_ago.replace(day=sixty_days_ago.day - 60)
+    from datetime import timedelta
+    sixty_days_ago = datetime.now(timezone.utc) - timedelta(days=60)
     comparisons = [c for c in comparisons if datetime.fromisoformat(c['timestamp'].replace('Z', '+00:00')) >= sixty_days_ago]
     
     # Save updated statistics

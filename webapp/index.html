@@ -2126,8 +2126,7 @@
                     
                     // Reload comparison data after a delay
                     setTimeout(async () => {
-                        await loadComparisonStatus();
-                        await loadComparisonChart();
+                        await loadAllComparisonStatus();
                         updateLastUpdatedTime();
                     }, 10000); // Wait 10 seconds before checking
                 } else {
