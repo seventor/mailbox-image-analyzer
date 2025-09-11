@@ -1537,17 +1537,7 @@
                     };
                 });
                 
-                // Calculate Y-axis min and max with 10% padding
-                
-                // Calculate Y-axis min and max with 10% padding
-                const allValues = recentComparisons.map(c => c.difference_percentage);
-                const minValue = Math.min(...allValues);
-                const maxValue = Math.max(...allValues);
-                const range = maxValue - minValue;
-                const padding = range * 0.1;
-                
-                const yMin = Math.max(0, minValue - padding);
-                const yMax = maxValue + padding;
+                // Y-axis is now fixed from 0 to 100
                 
                 // Destroy existing chart if it exists
                 if (comparisonChart) {
@@ -1635,8 +1625,8 @@
                                         weight: 'bold'
                                     }
                                 },
-                                min: yMin,
-                                max: yMax,
+                                min: 0,
+                                max: 100,
                                 ticks: {
                                     font: {
                                         size: 10
