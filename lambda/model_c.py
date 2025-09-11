@@ -110,7 +110,7 @@ def modelC_comparison(latest_image, median_image, latest_image_key, median_image
     
     # Calculate percentage difference
     total_pixels = latest_array.size
-    different_pixels = np.sum(diff_array > 10)  # Threshold of 10 for significant difference
+    different_pixels = np.sum(diff_array > 20)  # Threshold of 20 for significant difference
     difference_percentage = (different_pixels / total_pixels) * 100
     
     # Create visualization image with yellow pixels for differences
@@ -119,7 +119,7 @@ def modelC_comparison(latest_image, median_image, latest_image_key, median_image
     vis_array = np.array(visualization_image)
     
     # Mark different pixels as pure yellow (255, 255, 0)
-    diff_mask = diff_array > 10
+    diff_mask = diff_array > 20
     vis_array[diff_mask] = [255, 255, 0]  # Pure yellow
     
     # Convert back to PIL Image
