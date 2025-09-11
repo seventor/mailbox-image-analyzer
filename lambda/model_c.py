@@ -148,9 +148,10 @@ def save_modelC_result(bucket_name, comparison_result, latest_image_key, median_
     # Add new comparison to the beginning of the array
     comparisons.insert(0, comparison_result)
     
-    # Keep only the last 100 comparisons to prevent file from growing too large
-    if len(comparisons) > 100:
-        comparisons = comparisons[:100]
+    # Keep only comparisons from the last 60 days to prevent file from growing too large
+    sixty_days_ago = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    sixty_days_ago = sixty_days_ago.replace(day=sixty_days_ago.day - 60)
+    comparisons = [c for c in comparisons if datetime.fromisoformat(c['timestamp'].replace('Z', '+00:00')) >= sixty_days_ago]
     
     # Save updated statistics
     statistics_data = {
