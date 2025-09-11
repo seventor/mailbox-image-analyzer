@@ -724,6 +724,20 @@
                                 <canvas id="comparison-chart"></canvas>
                             </div>
                         </div>
+                        
+                        <div class="overview-card" style="grid-column: 1 / -1;">
+                            <h3>📊 Mail Arrival Patterns (Model D)</h3>
+                            <div style="width: 100%; height: 300px; position: relative;">
+                                <canvas id="mail-arrival-chart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="overview-card">
+                            <h3>⏱️ Average Collection Time</h3>
+                            <div id="collection-time-kpi" class="overview-content">
+                                <div class="loading">Loading collection time...</div>
+                            </div>
+                        </div>
                 </div>
             </div>
             
@@ -867,6 +881,8 @@
             loadLatestImage();
             loadMedianImage();
             loadAllComparisonStatus();
+            updateMailArrivalChart();
+            updateCollectionTimeKPI();
             loadImagesForAllTabs();
             updateLastUpdatedTime();
             
@@ -878,6 +894,8 @@
                     console.log('Auto-refreshing Overview data...');
                     loadLatestImage();
                     loadAllComparisonStatus();
+                    updateMailArrivalChart();
+                    updateCollectionTimeKPI();
                     updateLastUpdatedTime();
                 }
             }, 1 * 60 * 1000); // 1 minute
@@ -1650,6 +1668,245 @@
             }
         }
 
+        // Mail arrival analysis functions
+        async function updateMailArrivalChart() {
+            const ctx = document.getElementById('mail-arrival-chart');
+            if (!ctx) return;
+            
+            try {
+                // Load Model D statistics
+                const response = await fetch(`${API_BASE_URL}/comparison-status?model=ModelD`);
+                if (!response.ok) return;
+                
+                const data = await response.json();
+                if (!data.success || !data.statistics || !data.statistics.comparisons) return;
+                
+                const comparisons = data.statistics.comparisons;
+                
+                // Filter to last 7 days and only mail detected
+                const sevenDaysAgo = new Date();
+                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                const recentMailComparisons = comparisons.filter(c => {
+                    const comparisonDate = new Date(c.timestamp);
+                    return comparisonDate >= sevenDaysAgo && c.has_mail;
+                });
+                
+                if (recentMailComparisons.length === 0) {
+                    ctx.parentElement.innerHTML = '<div class="empty-state"><h3>No mail data</h3><p>No mail detected in the last 7 days</p></div>';
+                    return;
+                }
+                
+                // Create 15-minute interval buckets for each day of the week
+                const intervals = {};
+                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                
+                // Initialize intervals
+                days.forEach(day => {
+                    intervals[day] = {};
+                    for (let hour = 0; hour < 24; hour++) {
+                        for (let minute = 0; minute < 60; minute += 15) {
+                            const key = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                            intervals[day][key] = 0;
+                        }
+                    }
+                });
+                
+                // Count mail arrivals in each interval
+                recentMailComparisons.forEach(comparison => {
+                    const date = new Date(comparison.timestamp);
+                    const dayName = days[date.getDay()];
+                    const hour = date.getHours();
+                    const minute = Math.floor(date.getMinutes() / 15) * 15;
+                    const timeKey = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                    
+                    if (intervals[dayName] && intervals[dayName][timeKey] !== undefined) {
+                        intervals[dayName][timeKey]++;
+                    }
+                });
+                
+                // Create chart data
+                const timeLabels = [];
+                for (let hour = 0; hour < 24; hour++) {
+                    for (let minute = 0; minute < 60; minute += 15) {
+                        timeLabels.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
+                    }
+                }
+                
+                const datasets = days.map((day, index) => {
+                    const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6'];
+                    return {
+                        label: day,
+                        data: timeLabels.map(time => intervals[day][time] || 0),
+                        backgroundColor: colors[index] + '80',
+                        borderColor: colors[index],
+                        borderWidth: 1
+                    };
+                });
+                
+                // Destroy existing chart if it exists
+                if (window.mailArrivalChart) {
+                    window.mailArrivalChart.destroy();
+                }
+                
+                // Create new chart
+                window.mailArrivalChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: timeLabels,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Mail Arrivals by 15-Minute Intervals (Last 7 Days)',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        },
+                        scales: {
+                            x: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'Time of Day',
+                                    font: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    }
+                                },
+                                ticks: {
+                                    maxTicksLimit: 12,
+                                    callback: function(value, index, values) {
+                                        // Show every 2 hours
+                                        return index % 8 === 0 ? timeLabels[index] : '';
+                                    }
+                                }
+                            },
+                            y: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'Number of Mail Arrivals',
+                                    font: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    }
+                                },
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
+                        }
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Error updating mail arrival chart:', error);
+            }
+        }
+        
+        async function updateCollectionTimeKPI() {
+            const kpiElement = document.getElementById('collection-time-kpi');
+            if (!kpiElement) return;
+            
+            try {
+                // Load Model D statistics
+                const response = await fetch(`${API_BASE_URL}/comparison-status?model=ModelD`);
+                if (!response.ok) {
+                    kpiElement.innerHTML = '<div class="empty-state"><h3>Error</h3><p>Could not load data</p></div>';
+                    return;
+                }
+                
+                const data = await response.json();
+                if (!data.success || !data.statistics || !data.statistics.comparisons) {
+                    kpiElement.innerHTML = '<div class="empty-state"><h3>No data</h3><p>No comparison data available</p></div>';
+                    return;
+                }
+                
+                const comparisons = data.statistics.comparisons;
+                
+                // Filter to last 30 days
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                const recentComparisons = comparisons.filter(c => new Date(c.timestamp) >= thirtyDaysAgo);
+                
+                if (recentComparisons.length < 2) {
+                    kpiElement.innerHTML = '<div class="empty-state"><h3>Insufficient data</h3><p>Need at least 2 comparisons to calculate collection time</p></div>';
+                    return;
+                }
+                
+                // Sort by timestamp
+                recentComparisons.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                
+                // Find mail collection periods (transitions from has_mail=true to has_mail=false)
+                const collectionPeriods = [];
+                let mailArrivalTime = null;
+                
+                for (let i = 0; i < recentComparisons.length; i++) {
+                    const comparison = recentComparisons[i];
+                    
+                    if (comparison.has_mail && mailArrivalTime === null) {
+                        // Mail arrived
+                        mailArrivalTime = new Date(comparison.timestamp);
+                    } else if (!comparison.has_mail && mailArrivalTime !== null) {
+                        // Mail was collected
+                        const collectionTime = new Date(comparison.timestamp);
+                        const duration = collectionTime - mailArrivalTime;
+                        collectionPeriods.push(duration);
+                        mailArrivalTime = null;
+                    }
+                }
+                
+                if (collectionPeriods.length === 0) {
+                    kpiElement.innerHTML = '<div class="empty-state"><h3>No collections</h3><p>No mail collections detected in the last 30 days</p></div>';
+                    return;
+                }
+                
+                // Calculate average collection time
+                const totalDuration = collectionPeriods.reduce((sum, duration) => sum + duration, 0);
+                const averageDurationMs = totalDuration / collectionPeriods.length;
+                const averageHours = averageDurationMs / (1000 * 60 * 60);
+                
+                // Format the result
+                let timeString;
+                if (averageHours < 1) {
+                    const minutes = Math.round(averageHours * 60);
+                    timeString = `${minutes} minutes`;
+                } else if (averageHours < 24) {
+                    const hours = Math.round(averageHours * 10) / 10;
+                    timeString = `${hours} hours`;
+                } else {
+                    const days = Math.round(averageHours / 24 * 10) / 10;
+                    timeString = `${days} days`;
+                }
+                
+                kpiElement.innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="font-size: 32px; font-weight: bold; color: #059669; margin-bottom: 8px;">
+                            ${timeString}
+                        </div>
+                        <div style="font-size: 14px; color: #6b7280;">
+                            Based on ${collectionPeriods.length} collection(s) in the last 30 days
+                        </div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Error updating collection time KPI:', error);
+                kpiElement.innerHTML = '<div class="empty-state"><h3>Error</h3><p>Could not calculate collection time</p></div>';
+            }
+        }
+
         function formatDate(date) {
             const day = date.getDate().toString().padStart(2, '0');
             const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -2124,11 +2381,13 @@
                 if (result.success) {
                     showNotification(`All ${result.models_triggered.length} comparison models triggered successfully! Results will be updated shortly.`, 'success');
                     
-                    // Reload comparison data after a delay
-                    setTimeout(async () => {
-                        await loadAllComparisonStatus();
-                        updateLastUpdatedTime();
-                    }, 10000); // Wait 10 seconds before checking
+                // Reload comparison data after a delay
+                setTimeout(async () => {
+                    await loadAllComparisonStatus();
+                    updateMailArrivalChart();
+                    updateCollectionTimeKPI();
+                    updateLastUpdatedTime();
+                }, 10000); // Wait 10 seconds before checking
                 } else {
                     throw new Error(result.error || 'Failed to trigger comparison');
                 }

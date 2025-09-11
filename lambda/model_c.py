@@ -92,7 +92,7 @@ def modelC_comparison(latest_image, median_image, latest_image_key, median_image
         'total_pixels': int(total_pixels),
         'different_pixels': int(different_pixels),
         'has_mail': bool(has_mail),
-        'threshold': 60.0,
+        'threshold': 25.0,
         'image_size': target_size,
         'method': 'pixel_difference_grayscale_threshold_30',
         'visualization_saved': True
