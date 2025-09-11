@@ -1499,7 +1499,16 @@
                 // Filter to last 14 days
                 const fourteenDaysAgo = new Date();
                 fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+                
+                console.log('Chart Debug - Total comparisons:', allComparisons.length);
+                console.log('Chart Debug - 14 days ago cutoff:', fourteenDaysAgo.toISOString());
+                if (allComparisons.length > 0) {
+                    console.log('Chart Debug - Oldest comparison:', new Date(allComparisons[0].timestamp).toISOString());
+                    console.log('Chart Debug - Newest comparison:', new Date(allComparisons[allComparisons.length - 1].timestamp).toISOString());
+                }
+                
                 const recentComparisons = allComparisons.filter(c => new Date(c.timestamp) >= fourteenDaysAgo);
+                console.log('Chart Debug - Recent comparisons (last 14 days):', recentComparisons.length);
                 
                 if (recentComparisons.length === 0) return;
                 
