@@ -1496,17 +1496,22 @@
                 // Sort by timestamp (oldest first)
                 allComparisons.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
                 
-                if (allComparisons.length === 0) return;
+                // Filter to last 14 days
+                const fourteenDaysAgo = new Date();
+                fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+                const recentComparisons = allComparisons.filter(c => new Date(c.timestamp) >= fourteenDaysAgo);
+                
+                if (recentComparisons.length === 0) return;
                 
                 // Extract data for chart with proper time-based labels
-                const labels = allComparisons.map(c => {
+                const labels = recentComparisons.map(c => {
                     const date = new Date(c.timestamp);
                     return formatDate(date);
                 });
                 
                 // Create datasets for each model with proper time-based positioning
                 const datasets = allModels.map((model, index) => {
-                    const modelComparisons = allComparisons.filter(c => c.model === model);
+                    const modelComparisons = recentComparisons.filter(c => c.model === model);
                     const colors = ['#7749f8', '#dc2626', '#059669', '#ea580c', '#7c3aed'];
                     
                     // Create data points with proper time positioning using actual timestamps
@@ -1526,7 +1531,7 @@
                         pointBackgroundColor: colors[index % colors.length],
                         pointBorderColor: '#ffffff',
                         pointBorderWidth: 2,
-                        pointRadius: 3,
+                        pointRadius: 0,
                         pointHoverRadius: 5,
                         spanGaps: true
                     };
@@ -1535,7 +1540,7 @@
                 // Calculate Y-axis min and max with 10% padding
                 
                 // Calculate Y-axis min and max with 10% padding
-                const allValues = allComparisons.map(c => c.difference_percentage);
+                const allValues = recentComparisons.map(c => c.difference_percentage);
                 const minValue = Math.min(...allValues);
                 const maxValue = Math.max(...allValues);
                 const range = maxValue - minValue;
