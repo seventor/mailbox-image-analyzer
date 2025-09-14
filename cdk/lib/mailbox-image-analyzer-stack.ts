@@ -19,43 +19,16 @@ export interface MailboxImageAnalyzerStackProps extends cdk.StackProps {
 }
 
 export class MailboxImageAnalyzerStack extends cdk.Stack {
-  public readonly imageBucket: s3.Bucket;
+  public readonly imageBucket: s3.IBucket;
   public readonly cloudfrontDistribution: cloudfront.Distribution;
 
   constructor(scope: Construct, id: string, props: MailboxImageAnalyzerStackProps) {
     super(scope, id, props);
 
-    // Create S3 bucket for storing mailbox images and hosting webapp
-    this.imageBucket = new s3.Bucket(this, 'MailboxImageBucket', {
-      bucketName: `mailbox-image-analyzer-${props.environment}`,
-      versioned: true,
-      encryption: s3.BucketEncryption.S3_MANAGED,
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL, // Block all public access for security
-      removalPolicy: cdk.RemovalPolicy.RETAIN, // Keep data safe in both environments
-      lifecycleRules: [
-        {
-          id: 'DeleteOldImages',
-          enabled: true,
-          noncurrentVersionExpiration: cdk.Duration.days(30),
-          expiration: cdk.Duration.days(365), // Keep images for 1 year
-        },
-      ],
-    });
+    // Use existing S3 bucket for storing mailbox images and hosting webapp
+    this.imageBucket = s3.Bucket.fromBucketName(this, 'MailboxImageBucket', `mailbox-image-analyzer-${props.environment}`);
 
-    // Add bucket policy to require HTTPS
-    this.imageBucket.addToResourcePolicy(
-      new iam.PolicyStatement({
-        effect: iam.Effect.DENY,
-        principals: [new iam.AnyPrincipal()],
-        actions: ['s3:*'],
-        resources: [this.imageBucket.arnForObjects('*')],
-        conditions: {
-          Bool: {
-            'aws:SecureTransport': 'false',
-          },
-        },
-      })
-    );
+    // Note: Bucket policy for HTTPS requirement is already configured on the existing bucket
 
     // Output the bucket name
     new cdk.CfnOutput(this, 'ImageBucketName', {

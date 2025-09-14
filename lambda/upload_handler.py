@@ -4,7 +4,7 @@ import base64
 import os
 import logging
 from datetime import datetime
-from PIL import Image
+# from PIL import Image  # Temporarily disabled
 import io
 
 logger = logging.getLogger()
