@@ -61,6 +61,20 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
       validation: acm.CertificateValidation.fromDns(hostedZone),
     });
 
+    // Create CloudFront response headers policy for CORS
+    const corsResponseHeadersPolicy = new cloudfront.ResponseHeadersPolicy(this, 'CorsResponseHeadersPolicy', {
+      responseHeadersPolicyName: `cors-policy-${props.environment}`,
+      corsBehavior: {
+        accessControlAllowCredentials: false,
+        accessControlAllowHeaders: ['*'],
+        accessControlAllowMethods: ['GET', 'HEAD'],
+        accessControlAllowOrigins: ['*'],
+        accessControlExposeHeaders: ['ETag'],
+        accessControlMaxAge: cdk.Duration.seconds(3000),
+        originOverride: true,
+      },
+    });
+
     // Configure S3 origin using Origin Access Control (OAC)
     const s3Origin = origins.S3BucketOrigin.withOriginAccessControl(this.imageBucket, {
       // Explicit for clarity; READ is the default
@@ -89,6 +103,13 @@ export class MailboxImageAnalyzerStack extends cdk.Stack {
           origin: s3Origin,
           viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
           cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+          responseHeadersPolicy: corsResponseHeadersPolicy,
+        },
+        '/status/*': {
+          origin: s3Origin,
+          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+          responseHeadersPolicy: corsResponseHeadersPolicy,
         },
       },
       domainNames: [domainName],
